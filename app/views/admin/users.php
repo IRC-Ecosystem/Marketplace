@@ -1,0 +1,7 @@
+<?php /** @var array $data */ ?>
+<section class="mb-6"><h1 class="text-3xl font-bold">Manajemen User</h1><p class="mt-2 text-slate-600">Daftar akun dan role pengguna.</p></section>
+<section class="mb-6 grid gap-6 lg:grid-cols-[1fr_360px]">
+    <div class="rounded-lg border border-slate-200 bg-white p-5 shadow-sm" data-chart-url="<?= BASEURL ?>chart/adminRoles"></div>
+    <aside class="rounded-lg border border-slate-200 bg-white p-5 shadow-sm"><h2 class="text-xl font-bold">Analisis Role</h2><p class="mt-2 text-sm text-slate-600">Gunakan grafik ini untuk memastikan komposisi admin, seller, dan pembeli tetap sehat.</p></aside>
+</section>
+<section class="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm"><table class="w-full text-sm"><thead class="bg-slate-100 text-slate-600"><tr><th class="p-3 text-left">Nama</th><th class="p-3 text-left">Role</th><th class="p-3 text-right">Saldo</th></tr></thead><tbody><?php foreach ($data['users'] as $user): ?><tr class="border-t"><td class="p-3"><b><?= htmlspecialchars($user['name']) ?></b><p class="text-xs text-slate-500"><?= htmlspecialchars($user['email']) ?></p></td><td class="p-3"><span class="rounded-md bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-800"><?= htmlspecialchars($user['role']) ?></span></td><td class="p-3 text-right font-semibold">Rp<?= number_format($user['balance'], 0, ',', '.') ?></td></tr><?php endforeach; ?></tbody></table></section>
