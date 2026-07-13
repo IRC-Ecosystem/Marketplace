@@ -16,7 +16,7 @@ if ($user) {
             ['label' => 'User', 'href' => BASEURL . 'admin/users', 'active' => ['admin/users'], 'icon' => 'users'],
             ['label' => 'Toko', 'href' => BASEURL . 'admin/stores', 'active' => ['admin/stores'], 'icon' => 'store'],
             ['label' => 'Order', 'href' => BASEURL . 'admin/orders', 'active' => ['admin/orders'], 'icon' => 'orders'],
-            ['label' => 'Monitoring Seller', 'href' => BASEURL . 'admin/sellerFeatures', 'active' => ['admin/sellerFeatures'], 'icon' => 'chart'],
+            ['label' => 'Fitur Penjual', 'href' => BASEURL . 'admin/sellerFeatures', 'active' => ['admin/sellerFeatures'], 'icon' => 'box'],
             ['label' => 'Tentang', 'href' => BASEURL . 'about', 'active' => ['about'], 'icon' => 'info'],
         ],
         'seller' => [

@@ -70,6 +70,22 @@ class Product_model
         return $stmt->fetchAll();
     }
 
+    public function lowStockGlobal(int $limit = 10, int $threshold = 10): array
+    {
+        $stmt = $this->db->prepare('
+            SELECT p.*, s.name store_name, s.owner_id
+            FROM products p
+            JOIN stores s ON s.id = p.store_id
+            WHERE p.stock <= ?
+            ORDER BY p.stock ASC, p.name ASC
+            LIMIT ?
+        ');
+        $stmt->bindValue(1, $threshold, PDO::PARAM_INT);
+        $stmt->bindValue(2, $limit, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetchAll();
+    }
+
     public function featured(int $limit = 4): array
     {
         $stmt = $this->db->prepare('SELECT p.*, s.name store_name FROM products p JOIN stores s ON s.id = p.store_id WHERE p.status = "active" ORDER BY p.stock DESC, p.created_at DESC LIMIT ?');

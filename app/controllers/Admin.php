@@ -52,6 +52,7 @@ class Admin extends Controllers
             'stores' => $stores,
             'store_metrics' => $storeMetrics,
             'orders' => $orders,
+            'low_stock_products' => $productModel->lowStockGlobal(),
             'stats' => [
                 'orders' => $orderModel->count(),
                 'revenue' => $orderModel->revenue(),
@@ -110,6 +111,6 @@ class Admin extends Controllers
 
     public function sellerFeatures()
     {
-        $this->renderAdmin('admin/seller_features', 'Monitoring Seller');
+        $this->renderAdmin('admin/seller_features', 'Fitur Penjual');
     }
 }
