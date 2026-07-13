@@ -23,8 +23,8 @@ $initial = static fn (string $name): string => strtoupper(substr(trim($name) ?: 
         border-radius: 16px 4px 16px 16px;
     }
     .seller-chat-panel {
-        min-height: calc(100vh - 210px);
-        max-height: calc(100vh - 210px);
+        height: calc(100vh - 190px);
+        min-height: 620px;
     }
 </style>
 
@@ -40,7 +40,7 @@ $initial = static fn (string $name): string => strtoupper(substr(trim($name) ?: 
         </div>
     </div>
 
-    <div class="seller-chat-panel grid overflow-hidden rounded-xl border border-[#bcc9c6] bg-white shadow-sm lg:grid-cols-[340px_1fr] xl:grid-cols-[340px_1fr_320px]">
+    <div class="seller-chat-panel grid overflow-hidden rounded-xl border border-[#bcc9c6] bg-white shadow-sm lg:grid-cols-[340px_minmax(0,1fr)] xl:grid-cols-[340px_minmax(0,1fr)_320px]">
         <aside class="flex min-h-0 flex-col border-b border-[#bcc9c6] bg-[#ffffff] lg:border-b-0 lg:border-r">
             <div class="space-y-4 border-b border-[#bcc9c6] p-4">
                 <div class="relative">
@@ -90,7 +90,7 @@ $initial = static fn (string $name): string => strtoupper(substr(trim($name) ?: 
             </div>
         </aside>
 
-        <main class="flex min-h-0 flex-col bg-[#f8f9ff]">
+        <main class="flex min-h-0 min-w-0 flex-col bg-[#f8f9ff]">
             <header class="flex h-16 shrink-0 items-center justify-between border-b border-[#bcc9c6] bg-white px-5">
                 <div class="flex items-center gap-3">
                     <div id="activeBuyerInitial" class="flex h-10 w-10 items-center justify-center rounded-full bg-[#00685f] font-extrabold text-white"><?= htmlspecialchars($initial($activeMessage['buyer'])) ?></div>
@@ -175,7 +175,14 @@ $initial = static fn (string $name): string => strtoupper(substr(trim($name) ?: 
                 </div>
             </div>
 
-            <footer class="shrink-0 border-t border-[#bcc9c6] bg-white p-4">
+            <footer class="sticky bottom-0 z-10 shrink-0 border-t border-[#bcc9c6] bg-white p-4 shadow-[0_-10px_30px_rgba(11,28,48,0.08)]">
+                <div class="mb-3 flex items-center justify-between gap-3">
+                    <div>
+                        <p class="text-xs font-extrabold uppercase tracking-wide text-[#00685f]">Balas Pembeli</p>
+                        <p class="text-xs text-[#6d7a77]">Tulis balasan untuk percakapan yang sedang aktif.</p>
+                    </div>
+                    <span class="hidden rounded-full bg-[#eff4ff] px-3 py-1 text-xs font-bold text-[#3d4947] sm:inline">Enter untuk baris baru</span>
+                </div>
                 <div class="flex items-end gap-3">
                     <div class="flex gap-1 pb-1">
                         <button class="flex h-10 w-10 items-center justify-center rounded-full text-[#3d4947] transition hover:bg-[#eff4ff]" aria-label="Tambah lampiran">
