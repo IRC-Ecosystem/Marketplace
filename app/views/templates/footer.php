@@ -1,7 +1,61 @@
 </main>
+<?php $footerUser = current_user(); ?>
+<footer class="border-t border-[#bcc9c6] bg-[#dce9ff]">
+    <div class="mx-auto grid max-w-7xl grid-cols-1 gap-8 px-6 py-12 text-[#0b1c30] md:grid-cols-4 lg:px-8">
+        <div>
+            <h3 class="text-2xl font-extrabold text-[#00685f]">PasarKita</h3>
+            <p class="mt-4 max-w-xs text-sm leading-6 text-[#3d4947]">Pusat belanja online UMKM Indonesia terbaik dan terpercaya.</p>
+        </div>
+
+        <div>
+            <h4 class="text-sm font-extrabold uppercase tracking-wide text-[#0b1c30]">Layanan</h4>
+            <ul class="mt-4 space-y-3 text-sm text-[#3d4947]">
+                <li><a class="transition hover:text-[#00685f]" href="<?= BASEURL ?>">LogistiKita</a></li>
+                <li><a class="transition hover:text-[#00685f]" href="<?= BASEURL ?>">SmartBank</a></li>
+                <li><a class="transition hover:text-[#00685f]" href="<?= BASEURL ?>">SupplierHub</a></li>
+                <li><a class="transition hover:text-[#00685f]" href="<?= BASEURL ?>">UMKM Insight</a></li>
+            </ul>
+        </div>
+
+        <div>
+            <h4 class="text-sm font-extrabold uppercase tracking-wide text-[#0b1c30]">Bantuan</h4>
+            <ul class="mt-4 space-y-3 text-sm text-[#3d4947]">
+                <li><a class="transition hover:text-[#00685f]" href="<?= BASEURL ?>about">Pusat Bantuan</a></li>
+                <li><a class="transition hover:text-[#00685f]" href="<?= BASEURL ?>about">Syarat &amp; Ketentuan</a></li>
+                <li><a class="transition hover:text-[#00685f]" href="<?= BASEURL ?>about">Kebijakan Privasi</a></li>
+            </ul>
+        </div>
+
+        <div>
+            <h4 class="text-sm font-extrabold uppercase tracking-wide text-[#0b1c30]">Ikuti Kami</h4>
+            <p class="mt-4 text-sm leading-6 text-[#3d4947]">Dukung ekosistem UMKM lokal dan temukan produk pilihan PasarKita.</p>
+            <div class="mt-6 flex gap-3">
+                <a href="<?= BASEURL ?>" class="flex h-9 w-9 items-center justify-center rounded-full bg-[#00685f] text-white shadow-sm transition hover:bg-[#005049]" aria-label="PasarKita sosial">
+                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path>
+                    </svg>
+                </a>
+                <a href="<?= BASEURL ?>" class="flex h-9 w-9 items-center justify-center rounded-full bg-[#00685f] text-white shadow-sm transition hover:bg-[#005049]" aria-label="Bagikan PasarKita">
+                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="18" cy="5" r="3"></circle>
+                        <circle cx="6" cy="12" r="3"></circle>
+                        <circle cx="18" cy="19" r="3"></circle>
+                        <path d="m8.59 13.51 6.83 3.98"></path>
+                        <path d="m15.41 6.51-6.82 3.98"></path>
+                    </svg>
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="border-t border-[#bcc9c6]/70">
+        <div class="mx-auto flex max-w-7xl flex-col gap-2 px-6 py-5 text-sm text-[#3d4947] md:flex-row md:items-center md:justify-between lg:px-8">
+            <p>&copy; <?= date('Y') ?> PasarKita. Empowering Indonesian UMKM.</p>
+            <p>Marketplace UMKM - SmartBank - LogistiKita - SupplierHub</p>
+        </div>
+    </div>
+</footer>
 <?php if (current_user()): ?>
     <?php
-    $footerUser = current_user();
     $supportHref = match ($footerUser['role'] ?? null) {
         'seller' => BASEURL . 'toko/chat',
         'admin' => BASEURL . 'admin/sellerFeatures',
@@ -19,13 +73,6 @@
     </a>
     </div>
 </div>
-<?php else: ?>
-<footer class="border-t border-slate-200 bg-white">
-    <div class="mx-auto flex max-w-7xl flex-col gap-2 px-4 py-6 text-sm text-slate-500 md:flex-row md:items-center md:justify-between">
-        <span>PasarKita Marketplace UMKM</span>
-        <span>Fee: Marketplace 2%, Gateway 0.5%, Bank 1%, Pajak 2%, Logistik 5%/Rp5.000</span>
-    </div>
-</footer>
 <?php endif; ?>
 <script>
     (function () {
