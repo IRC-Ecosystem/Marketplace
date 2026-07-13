@@ -113,4 +113,9 @@ class Admin extends Controllers
     {
         $this->renderAdmin('admin/seller_features', 'Fitur Penjual');
     }
+
+    public function analytics()
+    {
+        $this->renderAdmin('admin/analytics', 'Analitik');
+    }
 }
