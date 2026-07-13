@@ -1,5 +1,22 @@
 </main>
 <?php if (current_user()): ?>
+    <?php
+    $footerUser = current_user();
+    $supportHref = match ($footerUser['role'] ?? null) {
+        'seller' => BASEURL . 'toko/chat',
+        'admin' => BASEURL . 'admin/sellerFeatures',
+        default => BASEURL . 'user/chat',
+    };
+    ?>
+    <a href="<?= $supportHref ?>" class="fixed bottom-6 right-6 z-50 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-700 text-white shadow-xl shadow-emerald-900/20 transition hover:scale-105 hover:bg-emerald-800" aria-label="Bantuan">
+        <svg class="h-7 w-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 11a6 6 0 0 0-12 0v4a3 3 0 0 0 3 3h1"/>
+            <path d="M18 11v5a2 2 0 0 1-2 2h-3"/>
+            <path d="M5 13H4a2 2 0 0 0 0 4h1"/>
+            <path d="M19 13h1a2 2 0 0 1 0 4h-1"/>
+            <path d="M9 18h5"/>
+        </svg>
+    </a>
     </div>
 </div>
 <?php else: ?>

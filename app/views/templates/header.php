@@ -36,6 +36,8 @@ if ($user) {
             ['label' => 'Keranjang', 'href' => BASEURL . 'user/cart', 'active' => ['user/cart'], 'icon' => 'cart'],
             ['label' => 'Checkout', 'href' => BASEURL . 'user/checkout', 'active' => ['user/checkout'], 'icon' => 'checkout'],
             ['label' => 'Order Saya', 'href' => BASEURL . 'user/orders', 'active' => ['user/orders'], 'icon' => 'orders'],
+            ['label' => 'Chat', 'href' => BASEURL . 'user/chat', 'active' => ['user/chat'], 'icon' => 'chat'],
+            ['label' => 'Profil', 'href' => BASEURL . 'user/profile', 'active' => ['user/profile'], 'icon' => 'users'],
             ['label' => 'Buka Toko', 'href' => BASEURL . 'toko', 'active' => ['toko'], 'icon' => 'store'],
             ['label' => 'Tentang', 'href' => BASEURL . 'about', 'active' => ['about'], 'icon' => 'info'],
         ],
@@ -98,13 +100,33 @@ function sidebar_icon(string $name): string
         </div>
     </aside>
     <div class="min-w-0 flex-1 lg:pl-72">
-        <header class="sticky top-0 z-10 border-b border-slate-200 bg-white/90 px-4 py-3 backdrop-blur lg:px-8">
-            <div class="flex items-center justify-between gap-4">
+        <header class="sticky top-0 z-10 border-b border-slate-200 bg-white/85 px-4 py-5 backdrop-blur lg:px-8">
+            <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                 <div>
-                    <p class="text-xs font-semibold uppercase tracking-wide text-slate-500"><?= htmlspecialchars($roleLabel) ?></p>
-                    <h1 class="text-lg font-bold"><?= htmlspecialchars($data['title'] ?? 'PasarKita') ?></h1>
+                    <h1 class="text-xl font-extrabold text-slate-950">Halo, <?= htmlspecialchars(explode(' ', trim($user['name']))[0]) ?>!</h1>
+                    <p class="mt-1 text-sm text-slate-600"><?= htmlspecialchars($data['title'] ?? 'PasarKita') ?> - Senang melihatmu kembali. Ada yang ingin dikelola hari ini?</p>
                 </div>
-                <span class="rounded-md bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-800"><?= htmlspecialchars(ucfirst($user['role'])) ?></span>
+                <div class="flex items-center gap-5">
+                    <?php if (($user['role'] ?? '') === 'user'): ?>
+                        <a href="<?= BASEURL ?>user/cart" class="relative rounded-full p-3 text-slate-950 hover:bg-slate-100" aria-label="Keranjang">
+                            <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><?= sidebar_icon('cart') ?></svg>
+                            <?php $headerCartItems = $data['cart']['items'] ?? $data['summary']['items'] ?? []; ?>
+                            <?php if (!empty($headerCartItems)): ?>
+                                <span class="absolute right-1 top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-600 px-1 text-[10px] font-bold text-white"><?= count($headerCartItems) ?></span>
+                            <?php endif; ?>
+                        </a>
+                        <div class="hidden h-10 w-px bg-slate-300 sm:block"></div>
+                    <?php endif; ?>
+                    <div class="text-right">
+                        <?php if (($user['role'] ?? '') === 'user' && isset($data['user']['balance'])): ?>
+                            <p class="text-xs font-extrabold uppercase tracking-wide text-emerald-700">SmartBank Balance</p>
+                            <p class="text-2xl font-extrabold text-slate-950">Rp<?= number_format($data['user']['balance'], 0, ',', '.') ?></p>
+                        <?php else: ?>
+                            <p class="text-xs font-extrabold uppercase tracking-wide text-emerald-700"><?= htmlspecialchars($roleLabel) ?></p>
+                            <p class="text-2xl font-extrabold text-slate-950"><?= htmlspecialchars($data['title'] ?? ucfirst($user['role'])) ?></p>
+                        <?php endif; ?>
+                    </div>
+                </div>
             </div>
         </header>
         <main class="px-4 py-6 lg:px-8">

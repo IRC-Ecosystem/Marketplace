@@ -9,16 +9,37 @@ class Product_model
         $this->db = Database::connection();
     }
 
-    public function latest(?string $keyword = null): array
+    public function latest(?string $keyword = null, ?float $minPrice = null, ?float $maxPrice = null): array
     {
+        $where = ['p.status = "active"'];
+        $params = [];
+
         if ($keyword) {
-            $stmt = $this->db->prepare('SELECT p.*, s.name store_name FROM products p JOIN stores s ON s.id = p.store_id WHERE p.status = "active" AND (p.name LIKE ? OR p.category LIKE ?) ORDER BY p.created_at DESC');
             $like = '%' . $keyword . '%';
-            $stmt->execute([$like, $like]);
-            return $stmt->fetchAll();
+            $where[] = '(p.name LIKE ? OR p.category LIKE ? OR s.name LIKE ?)';
+            $params[] = $like;
+            $params[] = $like;
+            $params[] = $like;
         }
 
-        return $this->db->query('SELECT p.*, s.name store_name FROM products p JOIN stores s ON s.id = p.store_id WHERE p.status = "active" ORDER BY p.created_at DESC')->fetchAll();
+        if ($minPrice !== null) {
+            $where[] = 'p.price >= ?';
+            $params[] = $minPrice;
+        }
+
+        if ($maxPrice !== null) {
+            $where[] = 'p.price <= ?';
+            $params[] = $maxPrice;
+        }
+
+        $stmt = $this->db->prepare('SELECT p.*, s.name store_name FROM products p JOIN stores s ON s.id = p.store_id WHERE ' . implode(' AND ', $where) . ' ORDER BY p.created_at DESC');
+        $stmt->execute($params);
+        return $stmt->fetchAll();
+    }
+
+    public function allCategories(): array
+    {
+        return $this->db->query('SELECT DISTINCT category FROM products WHERE status = "active" ORDER BY category ASC')->fetchAll(PDO::FETCH_COLUMN);
     }
 
     public function find(int $id): ?array

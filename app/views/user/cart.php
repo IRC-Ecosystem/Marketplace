@@ -1,46 +1,178 @@
 <?php
 /** @var array $data */
 $summary = $data['summary'];
+$itemCount = array_sum(array_map(fn ($item) => (int) $item['qty'], $summary['items']));
 ?>
-<section class="grid gap-6 xl:grid-cols-[1fr_360px]">
-    <div class="rounded-lg border border-slate-200 bg-white shadow-sm">
-        <div class="border-b p-4">
-            <h1 class="text-2xl font-bold">Keranjang</h1>
-            <p class="mt-1 text-sm text-slate-500">Produk yang siap dihitung sebagai checkout marketplace.</p>
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
+
+    .cart-page {
+        font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+
+    .cart-item {
+        transition: transform .2s ease, box-shadow .2s ease;
+    }
+
+    .cart-item:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 16px 28px -20px rgba(0, 104, 95, .35);
+    }
+</style>
+
+<div class="cart-page space-y-6">
+    <section>
+        <h1 class="text-3xl font-extrabold text-slate-950">Keranjang Belanja</h1>
+        <p class="mt-2 text-sm text-slate-600">Kelola produk UMKM pilihan kamu sebelum melakukan pembayaran.</p>
+    </section>
+
+    <section class="grid grid-cols-1 gap-6 lg:grid-cols-3 lg:items-start">
+        <div class="space-y-4 lg:col-span-2">
+            <?php if (!$summary['items']): ?>
+                <div class="rounded-xl border border-dashed border-slate-300 bg-white p-10 text-center shadow-sm">
+                    <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-50 text-2xl font-extrabold text-emerald-700">0</div>
+                    <h2 class="mt-4 text-xl font-extrabold text-slate-950">Keranjang masih kosong</h2>
+                    <p class="mt-2 text-sm text-slate-500">Pilih produk dari katalog untuk mulai checkout.</p>
+                    <a href="<?= BASEURL ?>user/catalog" class="mt-5 inline-flex rounded-xl bg-emerald-700 px-5 py-3 text-sm font-bold text-white hover:bg-emerald-800">Lihat Katalog</a>
+                </div>
+            <?php endif; ?>
+
+            <?php foreach ($summary['items'] as $item): ?>
+                <?php $product = $item['product']; ?>
+                <article class="cart-item flex flex-col gap-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm md:flex-row">
+                    <div class="h-36 w-full shrink-0 overflow-hidden rounded-lg bg-slate-100 md:h-32 md:w-32">
+                        <?php if (!empty($product['image_url'])): ?>
+                            <img class="h-full w-full object-cover transition duration-500 hover:scale-105" src="<?= htmlspecialchars($product['image_url']) ?>" alt="<?= htmlspecialchars($product['name']) ?>">
+                        <?php else: ?>
+                            <div class="flex h-full w-full items-center justify-center text-sm font-bold text-slate-500">PasarKita</div>
+                        <?php endif; ?>
+                    </div>
+
+                    <div class="flex min-w-0 flex-1 flex-col justify-between">
+                        <div>
+                            <div class="flex items-start justify-between gap-4">
+                                <div>
+                                    <h2 class="text-lg font-extrabold leading-6 text-slate-950"><?= htmlspecialchars($product['name']) ?></h2>
+                                    <p class="mt-1 text-xs font-bold uppercase tracking-wide text-emerald-700"><?= htmlspecialchars($product['store_name']) ?></p>
+                                </div>
+                                <a href="<?= BASEURL ?>user/removeCart/<?= (int) $product['id'] ?>" class="rounded-lg p-2 text-slate-500 hover:bg-red-50 hover:text-red-700" aria-label="Hapus item">
+                                    <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M3 6h18"/>
+                                        <path d="M8 6V4h8v2"/>
+                                        <path d="M19 6l-1 14H6L5 6"/>
+                                        <path d="M10 11v5"/>
+                                        <path d="M14 11v5"/>
+                                    </svg>
+                                </a>
+                            </div>
+                            <p class="mt-3 text-sm text-slate-600">Harga satuan Rp<?= number_format($product['price'], 0, ',', '.') ?></p>
+                        </div>
+
+                        <div class="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                            <div class="inline-flex w-fit items-center overflow-hidden rounded-lg border border-slate-300 bg-slate-50">
+                                <button disabled class="flex h-10 w-10 items-center justify-center text-slate-400">-</button>
+                                <span class="min-w-12 px-4 text-center font-extrabold"><?= (int) $item['qty'] ?></span>
+                                <button disabled class="flex h-10 w-10 items-center justify-center text-slate-400">+</button>
+                            </div>
+                            <p class="text-xl font-extrabold text-emerald-700">Rp<?= number_format($item['subtotal'], 0, ',', '.') ?></p>
+                        </div>
+                    </div>
+                </article>
+            <?php endforeach; ?>
         </div>
 
-        <?php foreach ($summary['items'] as $item): $product = $item['product']; ?>
-            <div class="flex items-center justify-between gap-4 border-b p-4">
+        <aside class="space-y-5">
+            <div class="relative overflow-hidden rounded-xl bg-emerald-700 p-6 text-white shadow-lg">
+                <div class="relative z-10">
+                    <div class="mb-4 flex items-center justify-between gap-3">
+                        <span class="text-xs font-extrabold uppercase tracking-widest text-emerald-100">SmartBank Balance</span>
+                        <span class="rounded-full bg-white/15 px-3 py-1 text-xs font-bold">Ready</span>
+                    </div>
+                    <p class="text-3xl font-extrabold">Rp<?= number_format($data['user']['balance'] ?? 0, 0, ',', '.') ?></p>
+                    <div class="mt-3 flex items-center gap-2 text-sm text-emerald-50">
+                        <span class="h-2 w-2 rounded-full bg-emerald-200"></span>
+                        <span>Saldo siap digunakan</span>
+                    </div>
+                </div>
+                <div class="absolute -bottom-10 -right-10 h-40 w-40 rounded-full bg-white/10 blur-3xl"></div>
+                <div class="absolute -left-10 -top-10 h-32 w-32 rounded-full bg-emerald-200/20 blur-2xl"></div>
+            </div>
+
+            <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+                <h2 class="text-xl font-extrabold text-slate-950">Ringkasan Pesanan</h2>
+                <div class="mt-5 space-y-4">
+                    <div class="flex justify-between gap-4 text-sm text-slate-600">
+                        <span>Total Harga (<?= (int) $itemCount ?> Barang)</span>
+                        <b class="text-slate-950">Rp<?= number_format($summary['subtotal'], 0, ',', '.') ?></b>
+                    </div>
+                    <div class="flex justify-between gap-4 text-sm text-slate-600">
+                        <span>Fee marketplace 2%</span>
+                        <b class="text-slate-950">Rp<?= number_format($summary['marketplaceFee'], 0, ',', '.') ?></b>
+                    </div>
+                    <div class="flex justify-between gap-4 text-sm text-slate-600">
+                        <span>Fee gateway 0.5%</span>
+                        <b class="text-slate-950">Rp<?= number_format($summary['gatewayFee'], 0, ',', '.') ?></b>
+                    </div>
+                    <div class="flex justify-between gap-4 text-sm text-slate-600">
+                        <span>Fee bank 1%</span>
+                        <b class="text-slate-950">Rp<?= number_format($summary['bankFee'], 0, ',', '.') ?></b>
+                    </div>
+                    <div class="flex justify-between gap-4 text-sm text-slate-600">
+                        <span>Pajak 2%</span>
+                        <b class="text-slate-950">Rp<?= number_format($summary['tax'], 0, ',', '.') ?></b>
+                    </div>
+                    <div class="flex justify-between gap-4 text-sm text-slate-600">
+                        <span>Logistik</span>
+                        <b class="text-slate-950">Rp<?= number_format($summary['shipping'], 0, ',', '.') ?></b>
+                    </div>
+                    <div class="border-t border-slate-200 pt-4">
+                        <div class="flex justify-between gap-4 text-lg font-extrabold text-slate-950">
+                            <span>Total Tagihan</span>
+                            <span>Rp<?= number_format($summary['total'], 0, ',', '.') ?></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-5 flex gap-3 rounded-xl border border-emerald-100 bg-emerald-50 p-4">
+                    <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white text-emerald-700">
+                        %
+                    </div>
+                    <div>
+                        <p class="text-sm font-extrabold text-slate-950">Voucher UMKM tersedia</p>
+                        <p class="mt-1 text-xs text-slate-600">Gunakan voucher di tahap checkout berikutnya.</p>
+                    </div>
+                </div>
+
+                <?php if ($summary['items']): ?>
+                    <a href="<?= BASEURL ?>user/checkout" class="mt-5 block rounded-xl bg-emerald-700 px-5 py-4 text-center text-lg font-extrabold text-white shadow-md hover:bg-emerald-800 active:scale-[0.98]">
+                        Checkout Sekarang
+                    </a>
+                <?php else: ?>
+                    <button disabled class="mt-5 block w-full rounded-xl bg-slate-200 px-5 py-4 text-center text-lg font-extrabold text-slate-500">
+                        Keranjang Kosong
+                    </button>
+                <?php endif; ?>
+
+                <div class="mt-4 text-center">
+                    <p class="text-xs text-slate-500">Metode Pembayaran</p>
+                    <p class="mt-1 text-sm font-extrabold text-emerald-700">SmartBank</p>
+                </div>
+            </div>
+
+            <div class="flex justify-center gap-8 text-center text-slate-400">
                 <div>
-                    <h2 class="font-semibold"><?= htmlspecialchars($product['name']) ?></h2>
-                    <p class="text-sm text-slate-600"><?= (int) $item['qty'] ?> x Rp<?= number_format($product['price'], 0, ',', '.') ?></p>
+                    <div class="text-lg">OK</div>
+                    <div class="text-[10px] font-bold uppercase">Secure</div>
                 </div>
-                <div class="text-right">
-                    <p class="font-bold">Rp<?= number_format($item['subtotal'], 0, ',', '.') ?></p>
-                    <a href="<?= BASEURL ?>user/removeCart/<?= $product['id'] ?>" class="text-sm font-semibold text-red-600">Hapus</a>
+                <div>
+                    <div class="text-lg">TR</div>
+                    <div class="text-[10px] font-bold uppercase">Tracked</div>
+                </div>
+                <div>
+                    <div class="text-lg">CS</div>
+                    <div class="text-[10px] font-bold uppercase">24/7 CS</div>
                 </div>
             </div>
-        <?php endforeach; ?>
-
-        <?php if (!$summary['items']): ?>
-            <div class="p-8 text-center">
-                <p class="font-semibold">Keranjang masih kosong</p>
-                <p class="mt-1 text-sm text-slate-500">Pilih produk dari dashboard pembeli untuk mulai checkout.</p>
-                <a href="<?= BASEURL ?>user" class="mt-4 inline-block rounded-md bg-emerald-700 px-4 py-2 text-sm font-semibold text-white">Lihat produk</a>
-            </div>
-        <?php endif; ?>
-    </div>
-
-    <aside class="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-        <h2 class="text-xl font-bold">Ringkasan Fee</h2>
-        <?php foreach (['subtotal' => 'Subtotal', 'marketplaceFee' => 'Fee marketplace 2%', 'gatewayFee' => 'Fee gateway 0.5%', 'bankFee' => 'Fee bank 1%', 'tax' => 'Pajak 2%', 'shipping' => 'Logistik'] as $key => $label): ?>
-            <div class="mt-3 flex justify-between text-sm"><span><?= $label ?></span><b>Rp<?= number_format($summary[$key], 0, ',', '.') ?></b></div>
-        <?php endforeach; ?>
-        <div class="mt-4 flex justify-between border-t pt-4 text-lg font-bold"><span>Total</span><span>Rp<?= number_format($summary['total'], 0, ',', '.') ?></span></div>
-        <?php if ($summary['items']): ?>
-            <a href="<?= BASEURL ?>user/checkout" class="mt-5 block rounded-md bg-emerald-700 px-4 py-3 text-center font-semibold text-white">Lanjut checkout</a>
-        <?php else: ?>
-            <button disabled class="mt-5 block w-full rounded-md bg-slate-200 px-4 py-3 text-center font-semibold text-slate-500">Keranjang kosong</button>
-        <?php endif; ?>
-    </aside>
-</section>
+        </aside>
+    </section>
+</div>

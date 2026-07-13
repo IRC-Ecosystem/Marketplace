@@ -6,12 +6,25 @@ class User extends Controllers
     {
         require_role('user');
         $productModel = $this->model('Product_model');
+        $minPrice = isset($_GET['min_price']) && $_GET['min_price'] !== '' ? (float) $_GET['min_price'] : null;
+        $maxPrice = isset($_GET['max_price']) && $_GET['max_price'] !== '' ? (float) $_GET['max_price'] : null;
+        $products = $productModel->latest($_GET['q'] ?? null, $minPrice, $maxPrice);
+
+        $orders = $this->model('Order_model')->byUser(current_user()['id']);
+        $orderItems = [];
+        foreach ($this->model('Order_model')->itemsByUser(current_user()['id']) as $item) {
+            $orderItems[$item['order_id']][] = $item;
+        }
+
         return [
             'title' => $title,
             'user' => $this->model('User_model')->find(current_user()['id']),
-            'products' => $productModel->latest($_GET['q'] ?? null),
+            'products' => $products,
             'featured' => $productModel->featured(),
-            'orders' => $this->model('Order_model')->byUser(current_user()['id']),
+            'orders' => $orders,
+            'orderItems' => $orderItems,
+            'cart' => $this->model('Cart_model')->summary(),
+            'categories' => $productModel->allCategories(),
             'vouchers' => [
                 ['code' => 'UMKM10', 'label' => 'Diskon 10% produk unggulan toko'],
                 ['code' => 'ONGKIR5K', 'label' => 'Subsidi logistik untuk checkout pertama'],
@@ -42,11 +55,22 @@ class User extends Controllers
         $this->renderUser('user/orders', 'Order Saya');
     }
 
+    public function chat()
+    {
+        $this->renderUser('user/chat', 'Chat Bantuan');
+    }
+
+    public function profile()
+    {
+        $this->renderUser('user/profile', 'Profil Pembeli');
+    }
+
     public function cart()
     {
         require_role('user');
         $data['title'] = 'Keranjang';
         $data['summary'] = $this->model('Cart_model')->summary();
+        $data['user'] = $this->model('User_model')->find(current_user()['id']);
 
         $this->view('templates/header', $data);
         $this->view('user/cart', $data);
@@ -91,6 +115,7 @@ class User extends Controllers
 
         $data['title'] = 'Checkout';
         $data['summary'] = $summary;
+        $data['user'] = $this->model('User_model')->find(current_user()['id']);
         $this->view('templates/header', $data);
         $this->view('user/checkout', $data);
         $this->view('templates/footer');

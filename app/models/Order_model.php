@@ -79,6 +79,20 @@ class Order_model
         return $stmt->fetchAll();
     }
 
+    public function itemsByUser(int $userId): array
+    {
+        $stmt = $this->db->prepare('
+            SELECT oi.*, p.image_url, p.category, o.user_id
+            FROM order_items oi
+            JOIN orders o ON o.id = oi.order_id
+            LEFT JOIN products p ON p.id = oi.product_id
+            WHERE o.user_id = ?
+            ORDER BY oi.id ASC
+        ');
+        $stmt->execute([$userId]);
+        return $stmt->fetchAll();
+    }
+
     public function byStore(int $storeId): array
     {
         $stmt = $this->db->prepare('SELECT DISTINCT o.*, u.name customer_name FROM orders o JOIN order_items oi ON oi.order_id = o.id JOIN users u ON u.id = o.user_id WHERE oi.store_id = ? ORDER BY o.created_at DESC');
