@@ -130,7 +130,40 @@ $firstProductImage = $products[0]['image_url'] ?? '';
                     <option>Tahun Ini</option>
                 </select>
             </div>
-            <div class="min-h-80 rounded-lg border border-[#d3e4fe] bg-[#f8f9ff] p-5" data-chart-url="<?= BASEURL ?>chart/sellerDashboard" data-refresh-ms="15000"></div>
+            <div class="relative h-80 w-full rounded-lg border border-[#d3e4fe] bg-[#f8f9ff] px-6 pb-12 pt-6">
+                <div class="absolute bottom-12 left-14 right-6 top-6 border-b border-l border-[#bcc9c6]/50">
+                    <div class="absolute -left-11 inset-y-0 flex flex-col justify-between py-1 text-[10px] font-bold text-[#6d7a77]">
+                        <span>20jt</span>
+                        <span>15jt</span>
+                        <span>10jt</span>
+                        <span>5jt</span>
+                        <span>0</span>
+                    </div>
+                    <svg class="h-full w-full overflow-visible" viewBox="0 0 1000 300" preserveAspectRatio="none" aria-label="Grafik statistik penjualan seller">
+                        <defs>
+                            <linearGradient id="sellerSalesGradient" x1="0%" x2="0%" y1="0%" y2="100%">
+                                <stop offset="0%" style="stop-color:rgba(0, 104, 95, 0.22);stop-opacity:1"></stop>
+                                <stop offset="100%" style="stop-color:rgba(0, 104, 95, 0);stop-opacity:1"></stop>
+                            </linearGradient>
+                        </defs>
+                        <path d="M0,250 Q100,220 200,260 T400,180 T600,120 T800,150 T1000,50" fill="none" stroke="#00685f" stroke-linecap="round" stroke-width="4"></path>
+                        <path d="M0,250 Q100,220 200,260 T400,180 T600,120 T800,150 T1000,50 L1000,300 L0,300 Z" fill="url(#sellerSalesGradient)"></path>
+                        <circle cx="200" cy="260" fill="#00685f" r="6"></circle>
+                        <circle cx="400" cy="180" fill="#00685f" r="6"></circle>
+                        <circle cx="600" cy="120" fill="#00685f" r="6"></circle>
+                        <circle cx="800" cy="150" fill="#00685f" r="6"></circle>
+                        <circle class="animate-pulse" cx="1000" cy="50" fill="#00685f" r="8"></circle>
+                    </svg>
+                </div>
+                <div class="absolute bottom-4 left-14 right-6 flex justify-between text-xs font-extrabold text-[#3d4947]">
+                    <span>Jan</span>
+                    <span>Feb</span>
+                    <span>Mar</span>
+                    <span>Apr</span>
+                    <span>Mei</span>
+                    <span>Jun</span>
+                </div>
+            </div>
         </section>
 
         <aside class="rounded-xl bg-[#0b1c30] p-6 text-white shadow-lg">
