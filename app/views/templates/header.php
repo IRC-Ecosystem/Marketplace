@@ -119,7 +119,7 @@ function sidebar_icon(string $name): string
         </div>
     </nav>
 </header>
-<main class="mx-auto max-w-7xl px-4 py-8">
+<main class="<?= $currentBase === 'home' ? 'px-0 py-0' : 'mx-auto max-w-7xl px-4 py-8' ?>">
 <?php endif; ?>
     <?php if ($message = flash('success')): ?>
         <div class="mb-5 rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800"><?= htmlspecialchars($message) ?></div>
