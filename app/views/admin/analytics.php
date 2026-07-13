@@ -112,19 +112,14 @@ uasort($regional, static fn ($a, $b) => $b['revenue'] <=> $a['revenue']);
                 </div>
                 <span class="rounded-full bg-emerald-50 px-3 py-1 text-xs font-extrabold text-emerald-700"><?= count($monthlyRevenue) ?> periode</span>
             </div>
-            <div class="relative h-[320px] overflow-hidden rounded-lg bg-gradient-to-b from-emerald-50 to-white">
-                <svg class="absolute inset-0 h-full w-full" preserveAspectRatio="none" viewBox="0 0 100 100">
-                    <path d="M0,82 Q20,70 32,72 T54,42 T75,50 T100,22 V100 H0 Z" fill="#047857" opacity="0.10"></path>
-                    <path d="M0,82 Q20,70 32,72 T54,42 T75,50 T100,22" fill="none" stroke="#047857" stroke-width="2"></path>
+            <div class="relative h-[360px] overflow-hidden rounded-lg bg-emerald-50/80">
+                <svg class="absolute inset-0 h-full w-full" preserveAspectRatio="none" viewBox="0 0 1000 360" role="img" aria-label="Grafik pertumbuhan pendapatan platform">
+                    <path d="M32 312 C 170 276, 270 272, 352 276 C 474 280, 552 214, 620 138 C 682 70, 772 106, 824 210 C 873 306, 945 279, 1000 80 L1000 360 L32 360 Z" fill="#047857" opacity="0.72"></path>
+                    <path d="M0 316 C 145 278, 260 270, 350 276 C 478 284, 554 213, 620 139 C 684 70, 774 107, 824 210 C 873 306, 946 279, 1000 79" fill="none" stroke="#007a64" stroke-linecap="round" stroke-linejoin="round" stroke-width="9"></path>
                 </svg>
-                <div class="absolute inset-x-6 bottom-5 flex items-end gap-3">
-                    <?php foreach ($monthlyRevenue as $month => $value): ?>
-                        <?php $height = max(8, round(((float) $value / $maxMonthlyRevenue) * 170)); ?>
-                        <div class="flex flex-1 flex-col items-center gap-2">
-                            <div class="w-full rounded-t-md bg-emerald-700/80" style="height: <?= $height ?>px"></div>
-                            <span class="text-xs font-bold text-slate-500"><?= htmlspecialchars($month) ?></span>
-                        </div>
-                    <?php endforeach; ?>
+                <div class="absolute inset-x-8 bottom-6 flex items-center justify-center">
+                    <?php $labelMonth = array_key_last($monthlyRevenue) ?: date('M'); ?>
+                    <span class="text-sm font-extrabold text-slate-500"><?= htmlspecialchars($labelMonth) ?></span>
                 </div>
             </div>
         </article>
