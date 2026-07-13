@@ -145,7 +145,25 @@ class Order_model
 
     public function all(): array
     {
-        return $this->db->query('SELECT o.*, u.name customer_name FROM orders o JOIN users u ON u.id = o.user_id ORDER BY o.created_at DESC')->fetchAll();
+        return $this->db->query('
+            SELECT
+                o.*,
+                u.name customer_name,
+                COALESCE(store_summary.store_names, "-") store_names,
+                COALESCE(store_summary.item_count, 0) item_count
+            FROM orders o
+            JOIN users u ON u.id = o.user_id
+            LEFT JOIN (
+                SELECT
+                    oi.order_id,
+                    GROUP_CONCAT(DISTINCT s.name ORDER BY s.name SEPARATOR ", ") store_names,
+                    SUM(oi.qty) item_count
+                FROM order_items oi
+                JOIN stores s ON s.id = oi.store_id
+                GROUP BY oi.order_id
+            ) store_summary ON store_summary.order_id = o.id
+            ORDER BY o.created_at DESC
+        ')->fetchAll();
     }
 
     public function count(): int
@@ -156,6 +174,20 @@ class Order_model
     public function revenue(): float
     {
         return (float) $this->db->query('SELECT COALESCE(SUM(total), 0) FROM orders WHERE payment_status = "paid"')->fetchColumn();
+    }
+
+    public function storeRevenueSummary(): array
+    {
+        return $this->db->query('
+            SELECT
+                oi.store_id,
+                COALESCE(SUM(oi.subtotal), 0) revenue,
+                COUNT(DISTINCT oi.order_id) orders
+            FROM order_items oi
+            JOIN orders o ON o.id = oi.order_id
+            WHERE o.payment_status = "paid"
+            GROUP BY oi.store_id
+        ')->fetchAll();
     }
 
     public function updateStatus(int $orderId, string $status, int $storeId): bool

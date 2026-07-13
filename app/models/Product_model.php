@@ -119,6 +119,11 @@ class Product_model
         return (int) $this->db->query('SELECT COUNT(*) FROM products')->fetchColumn();
     }
 
+    public function countByStore(): array
+    {
+        return $this->db->query('SELECT store_id, COUNT(*) total FROM products GROUP BY store_id')->fetchAll();
+    }
+
     public function lowStockCount(int $limit = 5): int
     {
         $stmt = $this->db->prepare('SELECT COUNT(*) FROM products WHERE stock <= ?');

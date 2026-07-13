@@ -12,6 +12,26 @@ class Admin extends Controllers
         $stores = $this->model('Store_model')->all();
         $users = $userModel->all();
         $orders = $orderModel->all();
+        $productCountsByStore = [];
+        foreach ($productModel->countByStore() as $row) {
+            $productCountsByStore[(int) $row['store_id']] = (int) $row['total'];
+        }
+        $revenueByStore = [];
+        foreach ($orderModel->storeRevenueSummary() as $row) {
+            $revenueByStore[(int) $row['store_id']] = [
+                'revenue' => (float) $row['revenue'],
+                'orders' => (int) $row['orders'],
+            ];
+        }
+        $storeMetrics = [];
+        foreach ($stores as $store) {
+            $storeId = (int) $store['id'];
+            $storeMetrics[$storeId] = [
+                'products' => $productCountsByStore[$storeId] ?? 0,
+                'revenue' => $revenueByStore[$storeId]['revenue'] ?? 0,
+                'orders' => $revenueByStore[$storeId]['orders'] ?? 0,
+            ];
+        }
         $roleCounts = [];
         foreach ($userModel->countByRole() as $role) {
             $roleCounts[$role['role']] = (int) $role['total'];
@@ -30,6 +50,7 @@ class Admin extends Controllers
             'users' => $users,
             'roles' => $userModel->countByRole(),
             'stores' => $stores,
+            'store_metrics' => $storeMetrics,
             'orders' => $orders,
             'stats' => [
                 'orders' => $orderModel->count(),
@@ -68,6 +89,13 @@ class Admin extends Controllers
     public function users()
     {
         $this->renderAdmin('admin/users', 'Manajemen User');
+    }
+
+    public function createUser()
+    {
+        require_role('admin');
+        flash('error', 'Admin hanya memiliki akses monitoring pengguna.');
+        $this->redirect('admin/users');
     }
 
     public function stores()
