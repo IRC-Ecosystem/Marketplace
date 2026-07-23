@@ -1,5 +1,7 @@
 <?php 
 
+define('APP_ROOT', __DIR__);
+
 require_once 'config/koneksi.php';
 require_once 'core/Database.php';
 require_once 'core/App.php';

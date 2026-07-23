@@ -126,6 +126,12 @@ function order_badge(string $status): array
                         </p>
                         <div class="flex flex-wrap gap-3">
                             <a href="<?= BASEURL ?>user/chat" class="rounded-lg border border-emerald-700 px-5 py-2 text-sm font-bold text-emerald-700 hover:bg-emerald-50">Hubungi Penjual</a>
+                            <?php if ($order['payment_status'] === 'pending'): ?>
+                                <form action="<?= BASEURL ?>user/paySmartBank/<?= (int) $order['id'] ?>" method="post" class="flex gap-2">
+                                    <input name="pin" type="password" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" placeholder="PIN SmartBank" class="w-36 rounded-lg border border-slate-300 px-3 py-2 text-sm" required>
+                                    <button class="rounded-lg bg-emerald-700 px-5 py-2 text-sm font-bold text-white hover:bg-emerald-800">Bayar SmartBank</button>
+                                </form>
+                            <?php endif; ?>
                             <?php if ($order['order_status'] === 'completed'): ?>
                                 <a href="<?= BASEURL ?>user/catalog" class="rounded-lg bg-emerald-700 px-6 py-2 text-sm font-bold text-white hover:bg-emerald-800">Beli Lagi</a>
                             <?php else: ?>

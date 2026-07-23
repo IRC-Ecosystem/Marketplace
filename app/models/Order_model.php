@@ -17,17 +17,8 @@ class Order_model
 
         $this->db->beginTransaction();
         try {
-            $wallet = $this->db->prepare('SELECT balance FROM wallets WHERE user_id = ? FOR UPDATE');
-            $wallet->execute([$userId]);
-            $balance = (float) $wallet->fetchColumn();
-
-            if ($balance < $summary['total']) {
-                $this->db->rollBack();
-                return null;
-            }
-
             $orderCode = 'PK-' . date('YmdHis') . '-' . random_int(100, 999);
-            $stmt = $this->db->prepare('INSERT INTO orders (user_id, order_code, shipping_address, subtotal, marketplace_fee, gateway_fee, bank_fee, tax, shipping_fee, total, payment_status, order_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, "paid", "processing")');
+            $stmt = $this->db->prepare('INSERT INTO orders (user_id, order_code, shipping_address, subtotal, marketplace_fee, gateway_fee, bank_fee, tax, shipping_fee, total, payment_status, order_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, "pending", "processing")');
             $stmt->execute([
                 $userId,
                 $orderCode,
@@ -50,18 +41,11 @@ class Order_model
                 $stockStmt->execute([$item['qty'], $product['id'], $item['qty']]);
             }
 
-            $this->db->prepare('UPDATE wallets SET balance = balance - ? WHERE user_id = ?')->execute([$summary['total'], $userId]);
-            $this->db->prepare('INSERT INTO payment_requests (order_id, from_app, user_id, amount, status, metadata) VALUES (?, "PasarKita", ?, ?, "success", ?)')->execute([
+            $this->db->prepare('INSERT INTO payment_requests (order_id, from_app, user_id, amount, status, metadata) VALUES (?, "PasarKita", ?, ?, "pending", ?)')->execute([
                 $orderId,
                 $userId,
                 $summary['total'],
-                json_encode(['gateway' => 'simulated', 'smartbank' => 'local_ledger']),
-            ]);
-            $this->db->prepare('INSERT INTO ledgers (user_id, order_id, type, amount, description) VALUES (?, ?, "debit", ?, ?)')->execute([
-                $userId,
-                $orderId,
-                $summary['total'],
-                'Checkout PasarKita ' . $orderCode,
+                json_encode(['gateway' => 'smartbank_connector']),
             ]);
 
             $this->db->commit();
@@ -77,6 +61,27 @@ class Order_model
         $stmt = $this->db->prepare('SELECT * FROM orders WHERE user_id = ? ORDER BY created_at DESC');
         $stmt->execute([$userId]);
         return $stmt->fetchAll();
+    }
+
+    public function findByUser(int $orderId, int $userId): ?array
+    {
+        $stmt = $this->db->prepare('SELECT * FROM orders WHERE id = ? AND user_id = ? LIMIT 1');
+        $stmt->execute([$orderId, $userId]);
+        return $stmt->fetch() ?: null;
+    }
+
+    public function markSmartBankPaid(int $orderId, int $userId, array $result): void
+    {
+        $this->db->beginTransaction();
+        try {
+            $this->db->prepare('UPDATE orders SET payment_status = "paid" WHERE id = ? AND user_id = ? AND payment_status = "pending"')->execute([$orderId, $userId]);
+            $this->db->prepare('UPDATE payment_requests SET status = "success", metadata = ? WHERE order_id = ?')->execute([json_encode($result), $orderId]);
+            $this->db->prepare('INSERT INTO ledgers (user_id, order_id, type, amount, description) SELECT user_id, id, "debit", total, CONCAT("SmartBank PasarKita ", order_code) FROM orders WHERE id = ? AND user_id = ?')->execute([$orderId, $userId]);
+            $this->db->commit();
+        } catch (Throwable $error) {
+            $this->db->rollBack();
+            throw $error;
+        }
     }
 
     public function itemsByUser(int $userId): array

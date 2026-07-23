@@ -8,12 +8,12 @@ class App{
     {
         $url = $this->parseURL() ?? [];
 
-        if(isset($url[0]) && file_exists('../app/controllers/' . ucfirst($url[0]) . '.php')){
+        if(isset($url[0]) && file_exists(APP_ROOT . '/controllers/' . ucfirst($url[0]) . '.php')){
             $this->controllers = ucfirst($url[0]);
             unset($url[0]);
         }
 
-        require_once '../app/controllers/' . $this->controllers . '.php';
+        require_once APP_ROOT . '/controllers/' . $this->controllers . '.php';
         $this->controllers = new $this->controllers;
 
         if(isset($url[1]) && method_exists($this->controllers, $url[1])){
@@ -26,11 +26,21 @@ class App{
     }
 
     public function parseURL(){
-        if( isset($_GET['url']) ){
-            $url = rtrim($_GET['url'], '/');
+        $url = $_GET['url'] ?? '';
+
+        if ($url === '') {
+            $path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?? '';
+            $basePath = rtrim(str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? '/')), '/');
+            if ($basePath !== '' && $basePath !== '/' && str_starts_with($path, $basePath . '/')) {
+                $path = substr($path, strlen($basePath));
+            }
+            $url = trim($path, '/');
+        }
+
+        if ($url !== '') {
+            $url = rtrim($url, '/');
             $url = filter_var($url, FILTER_SANITIZE_URL);
-            $url = explode('/',$url);
-            return $url;
+            return explode('/', $url);
         }
 
         return [];

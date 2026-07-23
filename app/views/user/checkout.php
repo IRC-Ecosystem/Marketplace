@@ -112,8 +112,8 @@ $itemCount = array_sum(array_map(fn ($item) => (int) $item['qty'], $summary['ite
                             <div class="flex items-center gap-3">
                                 <input checked class="text-emerald-700 focus:ring-emerald-700" name="payment_method" type="radio" value="smartbank">
                                 <div>
-                                    <p class="font-extrabold text-slate-950">SmartBank Balance</p>
-                                    <p class="mt-1 text-xs text-slate-500">Saldo: Rp<?= number_format($user['balance'] ?? 0, 0, ',', '.') ?></p>
+                                     <p class="font-extrabold text-slate-950">SmartBank</p>
+                                     <p class="mt-1 text-xs text-slate-500"><?= !empty($data['smartBank']['linked']) ? 'Wallet terhubung. PIN diminta setelah order dibuat.' : 'Hubungkan wallet terlebih dahulu dari Profil.' ?></p>
                                 </div>
                             </div>
                             <span class="text-xs font-extrabold text-emerald-700">INSTANT</span>
@@ -172,7 +172,7 @@ $itemCount = array_sum(array_map(fn ($item) => (int) $item['qty'], $summary['ite
                     </div>
 
                     <button class="mt-5 flex w-full items-center justify-center rounded-xl bg-emerald-700 px-5 py-4 text-lg font-extrabold text-white shadow-md hover:bg-emerald-800 active:scale-[0.98]">
-                        Konfirmasi Pembayaran
+                        Buat Order SmartBank
                     </button>
                     <p class="mt-4 text-center text-[11px] leading-5 text-slate-500">
                         Dengan menekan tombol di atas, kamu menyetujui syarat dan kebijakan PasarKita.
