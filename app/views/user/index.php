@@ -33,18 +33,18 @@ $levelProgress = min(100, ($points % 1000) / 10);
                 <h1 class="mt-2 text-3xl font-extrabold leading-tight text-[#0b1c30] md:text-4xl">
                     Halo, <?= htmlspecialchars($user['name']) ?>.
                 </h1>
-                <p class="mt-3 max-w-2xl text-sm leading-6 text-[#3d4947] md:text-base">
-                    Pantau saldo SmartBank, misi pembeli, keranjang, pesanan aktif, dan produk UMKM unggulan dari satu halaman.
+                  <p class="mt-3 max-w-2xl text-sm leading-6 text-[#3d4947] md:text-base">
+                     Pantau status wallet SmartBank, misi pembeli, keranjang, pesanan aktif, dan produk UMKM unggulan dari satu halaman.
                 </p>
                 <div class="mt-5 flex flex-wrap gap-3">
                     <a href="<?= BASEURL ?>user/catalog" class="rounded-lg bg-[#00685f] px-5 py-3 text-sm font-bold text-white hover:bg-[#008378]">Jelajahi Katalog</a>
                     <a href="<?= BASEURL ?>user/cart" class="rounded-lg border border-[#00685f] bg-white px-5 py-3 text-sm font-bold text-[#00685f] hover:bg-[#dae2fd]">Lihat Keranjang</a>
                 </div>
             </div>
-            <div class="rounded-xl bg-[#00685f] p-5 text-white">
-                <p class="text-xs font-bold uppercase tracking-wide text-[#89f5e7]">SmartBank Balance</p>
-                <p class="mt-2 text-3xl font-extrabold">Rp<?= number_format($user['balance'], 0, ',', '.') ?></p>
-                <p class="mt-3 text-sm leading-6 text-white/80">Saldo dipakai untuk checkout dan dicatat ke ledger transaksi.</p>
+              <div class="rounded-xl bg-[#00685f] p-5 text-white">
+                 <p class="text-xs font-bold uppercase tracking-wide text-[#89f5e7]">SmartBank Wallet</p>
+                 <p class="mt-2 text-2xl font-extrabold"><?= !empty($data['smartBank']['linked']) ? 'Terhubung' : 'Belum terhubung' ?></p>
+                 <p class="mt-3 text-sm leading-6 text-white/80"><?= !empty($data['smartBank']['linked']) ? 'Gunakan PIN SmartBank saat membayar pesanan.' : 'Hubungkan wallet dari Profil sebelum melakukan pembayaran.' ?></p>
             </div>
         </div>
     </section>
@@ -148,7 +148,7 @@ $levelProgress = min(100, ($points % 1000) / 10);
     <section class="grid gap-4 lg:grid-cols-2">
         <article class="rounded-xl border border-[#bcc9c6] bg-[#eff4ff] p-5">
             <h3 class="text-lg font-extrabold text-[#0b1c30]">SmartBank Protection</h3>
-            <p class="mt-2 text-sm leading-6 text-[#3d4947]">Checkout mengurangi saldo wallet lokal dan membuat payment request simulasi untuk kebutuhan demo integrasi.</p>
+             <p class="mt-2 text-sm leading-6 text-[#3d4947]">Checkout membuat order pending. Pembayaran diselesaikan melalui Connector menggunakan PIN SmartBank pembeli.</p>
         </article>
         <article class="rounded-xl border border-[#bcc9c6] bg-[#eff4ff] p-5">
             <h3 class="text-lg font-extrabold text-[#0b1c30]">LogistiKita Tracking</h3>
