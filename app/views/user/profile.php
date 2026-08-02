@@ -97,6 +97,28 @@ $address = trim((string) ($user['address'] ?? ''));
     <button type="button" data-profile-tab="notifikasi" class="profile-tab whitespace-nowrap border-b-2 border-transparent px-6 py-4 text-sm text-[#3d4947] transition hover:text-[#00685f]">Notifikasi</button>
 </nav>
 
+<?php $smartBank = $data['smartBank'] ?? ['linked' => false]; $buyerLink = $_SESSION['smartbank_buyer_link'] ?? []; ?>
+<section class="mt-6 rounded-xl border <?= !empty($smartBank['linked']) ? 'border-emerald-200 bg-emerald-50' : 'border-[#bcc9c6] bg-white' ?> p-6 shadow-sm">
+    <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+        <div>
+            <p class="text-xs font-extrabold uppercase tracking-wide text-[#00685f]">SmartBank</p>
+            <h2 class="mt-2 text-xl font-extrabold text-[#0b1c30]"><?= !empty($smartBank['linked']) ? 'Wallet terhubung' : 'Hubungkan wallet untuk pembayaran' ?></h2>
+            <p class="mt-2 text-sm text-[#3d4947]">OTP dikirim ke Inbox SmartBank. PIN hanya diminta saat membayar order.</p>
+            <?php if (!empty($smartBank['error']) && empty($smartBank['linked'])): ?><p class="mt-2 text-sm text-red-700"><?= htmlspecialchars($smartBank['error']) ?></p><?php endif; ?>
+        </div>
+        <span class="w-fit rounded-full px-3 py-1 text-xs font-extrabold <?= !empty($smartBank['linked']) ? 'bg-emerald-700 text-white' : 'bg-amber-100 text-amber-800' ?>"><?= !empty($smartBank['linked']) ? 'TERHUBUNG' : 'BELUM TERHUBUNG' ?></span>
+    </div>
+    <?php if (empty($smartBank['linked'])): ?>
+        <?php if (empty($buyerLink['request_id'])): ?>
+            <form action="<?= BASEURL ?>user/smartbankOtpRequest" method="post" class="mt-5"><button class="rounded-lg bg-[#00685f] px-5 py-3 text-sm font-extrabold text-white hover:bg-[#005049]">Kirim OTP SmartBank</button></form>
+        <?php elseif (empty($buyerLink['verification_token'])): ?>
+            <form action="<?= BASEURL ?>user/smartbankOtpVerify" method="post" class="mt-5 flex max-w-md gap-3"><input name="code" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" placeholder="OTP 6 digit" class="min-w-0 flex-1 rounded-lg border border-[#bcc9c6] px-4 py-3 font-mono" required><button class="rounded-lg bg-[#00685f] px-5 py-3 text-sm font-extrabold text-white">Verifikasi</button></form>
+        <?php else: ?>
+            <form action="<?= BASEURL ?>user/smartbankLink" method="post" class="mt-5"><button class="rounded-lg bg-[#00685f] px-5 py-3 text-sm font-extrabold text-white">Konfirmasi Hubungkan Wallet</button></form>
+        <?php endif; ?>
+    <?php endif; ?>
+</section>
+
 <section id="profile-panel-biodata" class="profile-panel mt-6 grid gap-6 lg:grid-cols-2">
     <article class="rounded-xl border border-[#bcc9c6] bg-white p-6 shadow-sm">
         <h2 class="text-xl font-extrabold text-[#0b1c30]">Informasi Pribadi</h2>
@@ -181,7 +203,7 @@ $address = trim((string) ($user['address'] ?? ''));
             </div>
             <div class="flex-1">
                 <h2 class="font-extrabold text-[#0b1c30]">Kata Sandi</h2>
-                <p class="mt-1 text-sm text-[#3d4947]">Gunakan sandi kuat untuk menjaga akun dan saldo SmartBank tetap aman.</p>
+            <p class="mt-1 text-sm text-[#3d4947]">Gunakan sandi kuat untuk menjaga akun Marketplace tetap aman.</p>
             </div>
             <button type="button" class="rounded-lg border border-[#00685f] px-5 py-3 text-sm font-extrabold text-[#00685f] transition hover:bg-[#00685f]/5">Ubah Sandi</button>
         </div>
