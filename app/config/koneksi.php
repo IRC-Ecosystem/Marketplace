@@ -23,6 +23,10 @@ function load_env(string $path): void
             $value = substr($value, 1, -1);
         }
 
+        if (getenv($key) !== false) {
+            continue;
+        }
+
         $_ENV[$key] = $value;
         putenv($key . '=' . $value);
     }
@@ -48,3 +52,8 @@ define('SMARTBANK_CONNECTOR_URL', rtrim(env_value('SMARTBANK_CONNECTOR_URL', 'ht
 define('SMARTBANK_CONNECTOR_API_KEY', env_value('SMARTBANK_CONNECTOR_API_KEY', ''));
 define('SMARTBANK_MARKETPLACE_EXTERNAL_ID', env_value('SMARTBANK_MARKETPLACE_EXTERNAL_ID', 'marketplace-merchant-main'));
 define('SMARTBANK_CONNECTOR_TIMEOUT_MS', (int) env_value('SMARTBANK_CONNECTOR_TIMEOUT_MS', 10000));
+define('LOGISTIKA_URL', rtrim(env_value('LOGISTIKA_URL', ''), '/'));
+define('LOGISTIKA_API_KEY', env_value('LOGISTIKA_API_KEY', ''));
+define('INTEGRATION_WEBHOOK_SECRET', env_value('INTEGRATION_WEBHOOK_SECRET', ''));
+define('UMKM_INSIGHT_EVENTS_URL', rtrim(env_value('UMKM_INSIGHT_EVENTS_URL', ''), '/'));
+define('UMKM_INSIGHT_EVENTS_API_KEY', env_value('UMKM_INSIGHT_EVENTS_API_KEY', ''));

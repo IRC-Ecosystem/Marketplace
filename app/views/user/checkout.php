@@ -123,7 +123,7 @@ $itemCount = array_sum(array_map(fn ($item) => (int) $item['qty'], $summary['ite
                                 <input disabled class="text-emerald-700 focus:ring-emerald-700" name="payment_method" type="radio" value="va">
                                 <div>
                                     <p class="font-extrabold text-slate-950">Virtual Account</p>
-                                    <p class="mt-1 text-xs text-slate-500">Belum aktif di demo ini</p>
+                                    <p class="mt-1 text-xs text-slate-500">Metode tidak tersedia.</p>
                                 </div>
                             </div>
                             <span class="text-xs font-bold text-slate-400">Soon</span>

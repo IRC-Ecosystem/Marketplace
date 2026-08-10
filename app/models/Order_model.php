@@ -15,7 +15,11 @@ class Order_model
             return null;
         }
 
-        $this->db->beginTransaction();
+        $inTransaction = $this->db->inTransaction();
+        if (!$inTransaction) {
+            $this->db->beginTransaction();
+        }
+
         try {
             $orderCode = 'PK-' . date('YmdHis') . '-' . random_int(100, 999);
             $stmt = $this->db->prepare('INSERT INTO orders (user_id, order_code, shipping_address, subtotal, marketplace_fee, gateway_fee, bank_fee, tax, shipping_fee, total, payment_status, order_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, "pending", "processing")');
@@ -38,7 +42,11 @@ class Order_model
             foreach ($summary['items'] as $item) {
                 $product = $item['product'];
                 $itemStmt->execute([$orderId, $product['id'], $product['store_id'], $product['name'], $product['price'], $item['qty'], $item['subtotal']]);
+
                 $stockStmt->execute([$item['qty'], $product['id'], $item['qty']]);
+                if ($stockStmt->rowCount() === 0) {
+                    throw new RuntimeException('Stok produk "' . $product['name'] . '" tidak mencukupi.');
+                }
             }
 
             $this->db->prepare('INSERT INTO payment_requests (order_id, from_app, user_id, amount, status, metadata) VALUES (?, "PasarKita", ?, ?, "pending", ?)')->execute([
@@ -48,11 +56,42 @@ class Order_model
                 json_encode(['gateway' => 'smartbank_connector']),
             ]);
 
-            $this->db->commit();
+            if (!$inTransaction) {
+                $this->db->commit();
+            }
             return $orderId;
         } catch (Throwable $e) {
-            $this->db->rollBack();
-            return null;
+            if (!$inTransaction && $this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
+            throw $e;
+        }
+    }
+
+    public function checkoutStores(int $userId, string $address, array $summary): array
+    {
+        $this->db->beginTransaction();
+        try {
+            $orderIds = [];
+            foreach ($summary['storeSummaries'] ?? [] as $storeSummary) {
+                $orderId = $this->checkout($userId, $address, $storeSummary);
+                if (!$orderId) {
+                    $this->db->rollBack();
+                    return [];
+                }
+
+                $stmt = $this->db->prepare('UPDATE orders SET store_id = ?, seller_external_id = ? WHERE id = ?');
+                $stmt->execute([$storeSummary['storeId'], $storeSummary['sellerExternalId'], $orderId]);
+                $orderIds[] = $orderId;
+            }
+
+            $this->db->commit();
+            return $orderIds;
+        } catch (Throwable $e) {
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
+            return [];
         }
     }
 
@@ -74,12 +113,29 @@ class Order_model
     {
         $this->db->beginTransaction();
         try {
-            $this->db->prepare('UPDATE orders SET payment_status = "paid" WHERE id = ? AND user_id = ? AND payment_status = "pending"')->execute([$orderId, $userId]);
+            $stmt = $this->db->prepare('UPDATE orders SET payment_status = "paid" WHERE id = ? AND user_id = ? AND payment_status = "pending"');
+            $stmt->execute([$orderId, $userId]);
+
+            if ($stmt->rowCount() === 0) {
+                // Idempotent guard: sudah paid atau order tidak valid
+                $this->db->commit();
+                return;
+            }
+
             $this->db->prepare('UPDATE payment_requests SET status = "success", metadata = ? WHERE order_id = ?')->execute([json_encode($result), $orderId]);
             $this->db->prepare('INSERT INTO ledgers (user_id, order_id, type, amount, description) SELECT user_id, id, "debit", total, CONCAT("SmartBank PasarKita ", order_code) FROM orders WHERE id = ? AND user_id = ?')->execute([$orderId, $userId]);
+
+            // Outbox 1: Logistika shipment creation
+            $this->db->prepare('INSERT INTO integration_outbox (event_id, event_type, aggregate_id, payload) SELECT UUID(), "MARKETPLACE_ORDER_PAID", id, JSON_OBJECT("order_id",id,"order_code",order_code,"origin","Marketplace Warehouse","destination",shipping_address) FROM orders WHERE id=?')->execute([$orderId]);
+
+            // Outbox 2: UMKM Insight event publishing
+            $this->db->prepare('INSERT INTO integration_outbox (event_id, event_type, aggregate_id, payload) SELECT UUID(), "UMKM_INSIGHT_PAYMENT_SETTLED", id, JSON_OBJECT("order_id",id,"order_code",order_code,"amount",total,"occurred_at",NOW()) FROM orders WHERE id=?')->execute([$orderId]);
+
             $this->db->commit();
         } catch (Throwable $error) {
-            $this->db->rollBack();
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
             throw $error;
         }
     }
@@ -202,7 +258,41 @@ class Order_model
             return false;
         }
 
-        $stmt = $this->db->prepare('UPDATE orders o SET o.order_status = ? WHERE o.id = ? AND EXISTS (SELECT 1 FROM order_items oi WHERE oi.order_id = o.id AND oi.store_id = ?)');
-        return $stmt->execute([$status, $orderId, $storeId]);
+        $this->db->beginTransaction();
+        try {
+            $stmt = $this->db->prepare('SELECT order_status, payment_status FROM orders WHERE id = ? FOR UPDATE');
+            $stmt->execute([$orderId]);
+            $currentOrder = $stmt->fetch();
+
+            if (!$currentOrder) {
+                $this->db->rollBack();
+                return false;
+            }
+
+            $oldStatus = $currentOrder['order_status'];
+
+            $updateStmt = $this->db->prepare('UPDATE orders o SET o.order_status = ? WHERE o.id = ? AND EXISTS (SELECT 1 FROM order_items oi WHERE oi.order_id = o.id AND oi.store_id = ?)');
+            $executed = $updateStmt->execute([$status, $orderId, $storeId]);
+
+            // Jika status berubah menjadi cancelled dan sebelumnya bukan cancelled, kembalikan stok product
+            if ($executed && $status === 'cancelled' && $oldStatus !== 'cancelled') {
+                $itemsStmt = $this->db->prepare('SELECT product_id, qty FROM order_items WHERE order_id = ?');
+                $itemsStmt->execute([$orderId]);
+                $items = $itemsStmt->fetchAll();
+
+                $restoreStock = $this->db->prepare('UPDATE products SET stock = stock + ? WHERE id = ?');
+                foreach ($items as $item) {
+                    $restoreStock->execute([$item['qty'], $item['product_id']]);
+                }
+            }
+
+            $this->db->commit();
+            return $executed;
+        } catch (Throwable $e) {
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
+            return false;
+        }
     }
 }

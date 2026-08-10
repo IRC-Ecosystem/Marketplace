@@ -3,15 +3,6 @@ USE pasarkita;
 
 SET FOREIGN_KEY_CHECKS = 0;
 
-DROP TABLE IF EXISTS ledgers;
-DROP TABLE IF EXISTS payment_requests;
-DROP TABLE IF EXISTS order_items;
-DROP TABLE IF EXISTS orders;
-DROP TABLE IF EXISTS products;
-DROP TABLE IF EXISTS stores;
-DROP TABLE IF EXISTS wallets;
-DROP TABLE IF EXISTS users;
-
 SET FOREIGN_KEY_CHECKS = 1;
 
 CREATE TABLE users (
@@ -40,6 +31,7 @@ CREATE TABLE stores (
     description TEXT NULL,
     address TEXT NULL,
     status ENUM('active', 'inactive') NOT NULL DEFAULT 'active',
+    smartbank_external_id VARCHAR(191) NULL UNIQUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_store_owner FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE
 );
@@ -61,6 +53,8 @@ CREATE TABLE products (
 CREATE TABLE orders (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
+    store_id INT NULL,
+    seller_external_id VARCHAR(191) NULL,
     order_code VARCHAR(40) NOT NULL UNIQUE,
     shipping_address TEXT NOT NULL,
     subtotal DECIMAL(14,2) NOT NULL,
@@ -73,7 +67,8 @@ CREATE TABLE orders (
     payment_status ENUM('pending', 'paid', 'failed') NOT NULL DEFAULT 'pending',
     order_status ENUM('processing', 'shipped', 'completed', 'cancelled') NOT NULL DEFAULT 'processing',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_order_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    CONSTRAINT fk_order_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    CONSTRAINT fk_order_store FOREIGN KEY (store_id) REFERENCES stores(id)
 );
 
 CREATE TABLE order_items (
@@ -114,22 +109,3 @@ CREATE TABLE ledgers (
     CONSTRAINT fk_ledger_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     CONSTRAINT fk_ledger_order FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE SET NULL
 );
-
-INSERT INTO users (id, name, email, password, role, address, phone) VALUES
-(1, 'Admin PasarKita', 'admin@pasarkita.test', '$2y$10$KSOvldSZu5cg3MNVKRH/OOnJsCu8JCklKY4F/LF44S4AAhxNa0Qey', 'admin', 'Kantor PasarKita', '0800000000'),
-(2, 'Sari UMKM', 'seller@pasarkita.test', '$2y$10$KSOvldSZu5cg3MNVKRH/OOnJsCu8JCklKY4F/LF44S4AAhxNa0Qey', 'seller', 'Bandung', '0812345678'),
-(3, 'Budi Pembeli', 'user@pasarkita.test', '$2y$10$KSOvldSZu5cg3MNVKRH/OOnJsCu8JCklKY4F/LF44S4AAhxNa0Qey', 'user', 'Cimahi', '0899999999');
-
-INSERT INTO wallets (user_id, balance) VALUES
-(1, 1000000000),
-(2, 50000),
-(3, 250000);
-
-INSERT INTO stores (id, owner_id, name, description, address, status) VALUES
-(1, 2, 'Dapur Sari', 'Produk makanan rumahan dan camilan UMKM.', 'Bandung', 'active');
-
-INSERT INTO products (store_id, name, category, description, price, stock, image_url, status) VALUES
-(1, 'Keripik Singkong Pedas', 'Makanan', 'Keripik renyah dengan bumbu pedas.', 12000, 40, 'https://images.unsplash.com/photo-1621939514649-280e2ee25f60?auto=format&fit=crop&w=900&q=80', 'active'),
-(1, 'Kopi Arabika Lokal', 'Minuman', 'Kopi arabika roast medium dari petani lokal.', 35000, 25, 'https://images.unsplash.com/photo-1447933601403-0c6688de566e?auto=format&fit=crop&w=900&q=80', 'active'),
-(1, 'Sambal Bawang Botol', 'Makanan', 'Sambal bawang siap makan ukuran 180 gram.', 18000, 30, 'https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?auto=format&fit=crop&w=900&q=80', 'active'),
-(1, 'Tas Anyaman Mini', 'Kerajinan', 'Tas anyaman handmade untuk aktivitas harian.', 55000, 12, 'https://images.unsplash.com/photo-1590739225285-6330123b172c?auto=format&fit=crop&w=900&q=80', 'active');
