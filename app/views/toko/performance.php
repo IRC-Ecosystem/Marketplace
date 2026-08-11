@@ -16,6 +16,23 @@ $rating = 4.8 + min(0.1, $completed * 0.01);
 $visitors = max(1245, count($products) * 317 + count($orders) * 210);
 $performanceIndex = min(96, 72 + (int) ($completionRate / 5) + min(8, count($bestSellers)));
 $topProduct = $bestSellers[0]['product_name'] ?? '-';
+
+$weeklyVisitors = [
+    'Minggu 1' => (int) round($visitors * 0.18),
+    'Minggu 2' => (int) round($visitors * 0.28),
+    'Minggu 3' => (int) round($visitors * 0.34),
+    'Minggu 4' => (int) round($visitors * 0.20),
+];
+
+$conversionRateOverall = count($orders) > 0 ? min(12.5, round((count($orders) / max($visitors, 1)) * 100, 1)) : 0.0;
+$hourlyConversion = [
+    '00:00' => round($conversionRateOverall * 0.4, 1),
+    '06:00' => round($conversionRateOverall * 0.8, 1),
+    '12:00' => round($conversionRateOverall * 1.4, 1),
+    '18:00' => round($conversionRateOverall * 1.8, 1),
+    '23:59' => round($conversionRateOverall * 1.1, 1),
+];
+$maxConversion = max(0.1, ...array_values($hourlyConversion));
 ?>
 
 <style>
@@ -126,13 +143,8 @@ $topProduct = $bestSellers[0]['product_name'] ?? '-';
                     <button class="rounded p-2 hover:bg-[#eff4ff]">Menu</button>
                 </div>
             </div>
-            <div class="group flex h-64 items-end gap-2">
-                <?php foreach ([40, 55, 45, 70, 85, 65, 95, 60, 50, 30, 100, 75] as $height): ?>
-                    <div class="flex-grow rounded-t-sm bg-[#00685f]/20 transition hover:bg-[#00685f]" style="height: <?= $height ?>%"></div>
-                <?php endforeach; ?>
-            </div>
-            <div class="mt-3 flex justify-between px-1 text-xs font-bold text-[#6d7a77]">
-                <span>Minggu 1</span><span>Minggu 2</span><span>Minggu 3</span><span>Minggu 4</span>
+            <div class="relative h-64 w-full rounded-lg bg-[#eff4ff]/60 p-3">
+                <canvas id="visitorTrendChart"></canvas>
             </div>
         </section>
 
@@ -140,28 +152,12 @@ $topProduct = $bestSellers[0]['product_name'] ?? '-';
             <div class="mb-6 flex items-center justify-between">
                 <div>
                     <h2 class="text-xl font-extrabold text-[#0b1c30]">Tingkat Konversi</h2>
-                    <p class="mt-1 text-sm text-[#3d4947]">Rata-rata <?= count($orders) ? number_format(min(9.8, (count($orders) / max($visitors, 1)) * 100), 1) : '0.0' ?>% per hari</p>
+                    <p class="mt-1 text-sm text-[#3d4947]">Rata-rata <?= $conversionRateOverall ?>% per hari</p>
                 </div>
-                <span class="rounded-full bg-[#ffdad6]/40 px-3 py-1 text-xs font-extrabold text-[#ba1a1a]">0.4%</span>
+                <span class="rounded-full bg-[#e8fff8] px-3 py-1 text-xs font-extrabold text-[#00685f]">Highest <?= $maxConversion ?>%</span>
             </div>
-            <div class="relative h-64 border-b border-l border-[#bcc9c6]">
-                <svg class="h-full w-full" preserveAspectRatio="none" viewBox="0 0 100 100">
-                    <defs>
-                        <linearGradient id="gradientConversionSeller" x1="0%" x2="0%" y1="0%" y2="100%">
-                            <stop offset="0%" style="stop-color:#825100;stop-opacity:0.28"></stop>
-                            <stop offset="100%" style="stop-color:#825100;stop-opacity:0"></stop>
-                        </linearGradient>
-                    </defs>
-                    <path d="M0 80 Q20 60 40 75 T80 40 T100 20 L100 100 L0 100 Z" fill="url(#gradientConversionSeller)"></path>
-                    <path d="M0 80 Q20 60 40 75 T80 40 T100 20" fill="none" stroke="#825100" stroke-width="2"></path>
-                </svg>
-                <div class="absolute right-4 top-4 rounded border border-[#bcc9c6] bg-white/80 p-3 shadow-sm">
-                    <p class="text-[10px] font-extrabold text-[#6d7a77]">TERTINGGI HARI INI</p>
-                    <p class="text-lg font-extrabold text-[#825100]">4.1%</p>
-                </div>
-            </div>
-            <div class="mt-3 flex justify-between text-xs font-bold text-[#6d7a77]">
-                <span>00:00</span><span>08:00</span><span>16:00</span><span>23:59</span>
+            <div class="relative h-64 w-full rounded-lg bg-[#fff8f0]/60 p-3">
+                <canvas id="conversionRateChart"></canvas>
             </div>
         </section>
     </div>
@@ -231,3 +227,102 @@ $topProduct = $bestSellers[0]['product_name'] ?? '-';
         <article class="rounded-xl border border-[#bcc9c6] bg-white p-5 shadow-sm"><p class="text-sm text-[#3d4947]">Rating</p><b class="mt-2 block text-xl text-[#0b1c30]"><?= number_format($rating, 1) ?>/5</b></article>
     </section>
 </section>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // 1. Visitor Trend Chart (Bar Chart)
+    const visitorCanvas = document.getElementById('visitorTrendChart');
+    if (visitorCanvas) {
+        const ctxVisitor = visitorCanvas.getContext('2d');
+        const weeks = <?= json_encode(array_keys($weeklyVisitors)) ?>;
+        const visitorData = <?= json_encode(array_values($weeklyVisitors)) ?>;
+
+        new Chart(ctxVisitor, {
+            type: 'bar',
+            data: {
+                labels: weeks,
+                datasets: [{
+                    label: 'Pengunjung',
+                    data: visitorData,
+                    backgroundColor: '#00685f',
+                    borderRadius: 6,
+                    barThickness: 28
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: function (context) {
+                                return ' ' + new Intl.NumberFormat('id-ID').format(context.raw) + ' Pengunjung';
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: { beginAtZero: true }
+                }
+            }
+        });
+    }
+
+    // 2. Conversion Rate Chart (Area Line Chart)
+    const conversionCanvas = document.getElementById('conversionRateChart');
+    if (conversionCanvas) {
+        const ctxConversion = conversionCanvas.getContext('2d');
+        const hours = <?= json_encode(array_keys($hourlyConversion)) ?>;
+        const rates = <?= json_encode(array_values($hourlyConversion)) ?>;
+
+        const gradient = ctxConversion.createLinearGradient(0, 0, 0, 220);
+        gradient.addColorStop(0, 'rgba(130, 81, 0, 0.35)');
+        gradient.addColorStop(1, 'rgba(130, 81, 0, 0.0)');
+
+        new Chart(ctxConversion, {
+            type: 'line',
+            data: {
+                labels: hours,
+                datasets: [{
+                    label: 'Tingkat Konversi (%)',
+                    data: rates,
+                    borderColor: '#825100',
+                    borderWidth: 3,
+                    backgroundColor: gradient,
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 5,
+                    pointHoverRadius: 7,
+                    pointBackgroundColor: '#825100'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: function (context) {
+                                return ' Konversi: ' + context.raw + '%';
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function (value) {
+                                return value + '%';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+});
+</script>
