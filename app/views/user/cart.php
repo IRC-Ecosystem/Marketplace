@@ -133,15 +133,20 @@ $itemCount = array_sum(array_map(fn ($item) => (int) $item['qty'], $summary['ite
                     </div>
                 </div>
 
-                <div class="mt-5 flex gap-3 rounded-xl border border-emerald-100 bg-emerald-50 p-4">
-                    <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white text-emerald-700">
-                        %
+                <form method="post" action="<?= BASEURL ?>user/applyVoucher" class="mt-5 rounded-xl border border-emerald-100 bg-emerald-50 p-4">
+                    <?= csrf_field() ?>
+                    <p class="text-sm font-extrabold text-slate-950">Gunakan Voucher Belanja</p>
+                    <div class="mt-2 flex gap-2">
+                        <input name="voucher_code" value="<?= e($summary['voucherCode'] ?? '') ?>" placeholder="Kode Voucher (misal: UMKM10)" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-bold uppercase">
+                        <button type="submit" class="rounded-lg bg-emerald-700 px-4 py-2 text-xs font-bold text-white hover:bg-emerald-800">Pakai</button>
                     </div>
-                    <div>
-                        <p class="text-sm font-extrabold text-slate-950">Voucher UMKM tersedia</p>
-                        <p class="mt-1 text-xs text-slate-600">Gunakan voucher di tahap checkout berikutnya.</p>
-                    </div>
-                </div>
+                    <?php if (!empty($summary['discount']) && $summary['discount'] > 0): ?>
+                        <p class="mt-2 text-xs font-bold text-emerald-700">Diskon diterapkan: -Rp<?= number_format($summary['discount'], 0, ',', '.') ?></p>
+                    <?php endif; ?>
+                    <?php if (!empty($summary['voucherError'])): ?>
+                        <p class="mt-2 text-xs font-bold text-red-600"><?= e($summary['voucherError']) ?></p>
+                    <?php endif; ?>
+                </form>
 
                 <?php if ($summary['items']): ?>
                     <a href="<?= BASEURL ?>user/checkout" class="mt-5 block rounded-xl bg-emerald-700 px-5 py-4 text-center text-lg font-extrabold text-white shadow-md hover:bg-emerald-800 active:scale-[0.98]">

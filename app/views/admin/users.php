@@ -144,9 +144,13 @@ $formatNumber = static fn (int $value): string => number_format($value, 0, ',', 
                             <td class="px-5 py-4 text-right font-extrabold text-slate-950">Rp<?= number_format((float) ($row['balance'] ?? 0), 0, ',', '.') ?></td>
                             <td class="px-5 py-4 text-right">
                                 <div class="flex justify-end gap-2 opacity-100 md:opacity-0 md:transition-opacity md:group-hover:opacity-100">
-                                    <button type="button" class="rounded-md border border-slate-200 px-3 py-2 text-xs font-bold text-slate-700 hover:border-emerald-700 hover:text-emerald-700">Detail</button>
                                     <?php if ($role !== 'admin'): ?>
-                                        <button type="button" class="rounded-md border border-slate-200 px-3 py-2 text-xs font-bold text-slate-700 hover:border-amber-500 hover:text-amber-700">Review</button>
+                                        <form method="post" action="<?= BASEURL ?>admin/toggleUserStatus/<?= (int) $row['id'] ?>">
+                                            <?= csrf_field() ?>
+                                            <button class="rounded-md border border-slate-200 px-3 py-2 text-xs font-bold <?= ($row['status'] ?? 'active') === 'active' ? 'text-red-600 hover:bg-red-50' : 'text-emerald-600 hover:bg-emerald-50' ?>">
+                                                <?= ($row['status'] ?? 'active') === 'active' ? 'Suspend' : 'Aktifkan' ?>
+                                            </button>
+                                        </form>
                                     <?php else: ?>
                                         <span class="rounded-md bg-slate-100 px-3 py-2 text-xs font-bold text-slate-500">Terkunci</span>
                                     <?php endif; ?>

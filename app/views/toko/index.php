@@ -19,6 +19,7 @@ $statusBadge = function (string $status): string {
     <h1 class="mt-1 text-2xl font-bold">Buka Toko</h1>
     <p class="mt-2 text-slate-600">Setelah toko dibuat, role akun berubah menjadi seller dan bisa mengelola produk.</p>
     <form method="post" action="<?= BASEURL ?>toko/create" class="mt-5 grid gap-4">
+        <?= csrf_field() ?>
         <input name="name" required placeholder="Nama toko" class="rounded-md border border-slate-300 px-3 py-2">
         <textarea name="description" placeholder="Deskripsi toko" class="rounded-md border border-slate-300 px-3 py-2"></textarea>
         <textarea name="address" placeholder="Alamat toko" class="rounded-md border border-slate-300 px-3 py-2"></textarea>
@@ -62,6 +63,7 @@ $statusBadge = function (string $status): string {
         <section class="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
             <h2 class="font-bold">Tambah Produk Baru</h2>
             <form method="post" action="<?= BASEURL ?>toko/product" class="mt-4 grid gap-3">
+                <?= csrf_field() ?>
                 <input name="name" required placeholder="Nama produk" class="rounded-md border border-slate-300 px-3 py-2">
                 <input name="category" required placeholder="Kategori" class="rounded-md border border-slate-300 px-3 py-2">
                 <input name="price" required type="number" min="0" placeholder="Harga" class="rounded-md border border-slate-300 px-3 py-2">
@@ -113,6 +115,7 @@ $statusBadge = function (string $status): string {
                         <?php foreach ($data['products'] as $product): ?>
                             <tr class="border-t align-top">
                                 <form method="post" action="<?= BASEURL ?>toko/updateProduct/<?= $product['id'] ?>">
+                                    <?= csrf_field() ?>
                                     <td class="p-3"><input name="name" value="<?= htmlspecialchars($product['name']) ?>" class="w-full rounded border border-slate-300 px-2 py-2"><input type="hidden" name="image_url" value="<?= htmlspecialchars($product['image_url']) ?>"><input type="hidden" name="description" value="<?= htmlspecialchars($product['description']) ?>"></td>
                                     <td class="p-3"><input name="category" value="<?= htmlspecialchars($product['category']) ?>" class="w-32 rounded border border-slate-300 px-2 py-2"></td>
                                     <td class="p-3"><input name="price" type="number" value="<?= (int) $product['price'] ?>" class="w-28 rounded border border-slate-300 px-2 py-2 text-right"></td>
@@ -141,6 +144,7 @@ $statusBadge = function (string $status): string {
             <?php endif; ?>
             <?php foreach ($data['orders'] as $order): ?>
                 <form method="post" action="<?= BASEURL ?>toko/orderStatus" class="mb-3 rounded-md border border-slate-200 p-4">
+                    <?= csrf_field() ?>
                     <input type="hidden" name="order_id" value="<?= $order['id'] ?>">
                     <div class="flex flex-wrap items-start justify-between gap-3">
                         <div>

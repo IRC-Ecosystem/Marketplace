@@ -92,10 +92,17 @@ class Admin extends Controllers
         $this->renderAdmin('admin/users', 'Manajemen User');
     }
 
-    public function createUser()
+    public function toggleUserStatus($id)
     {
         require_role('admin');
-        flash('error', 'Admin hanya memiliki akses monitoring pengguna.');
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            verify_csrf();
+            if ($this->model('User_model')->toggleStatus((int) $id)) {
+                flash('success', 'Status user berhasil diperbarui.');
+            } else {
+                flash('error', 'Gagal memperbarui status user.');
+            }
+        }
         $this->redirect('admin/users');
     }
 
@@ -127,6 +134,7 @@ class Admin extends Controllers
             $state['linked'] = (bool) $this->model('SmartBank_model')->linkage(SMARTBANK_MARKETPLACE_EXTERNAL_ID);
         } catch (Throwable $error) {
             $state['error'] = $error->getMessage();
+            log_app_error($error);
         }
         $data = ['title' => 'Wallet SmartBank Marketplace', 'smartBank' => $state];
         $this->view('templates/header', $data);
@@ -137,40 +145,58 @@ class Admin extends Controllers
     public function smartbankOtpRequest()
     {
         require_role('admin');
-        try {
-            $phone = trim($_POST['phone'] ?? '');
-            if ($phone === '') throw new RuntimeException('Nomor SmartBank wajib diisi.');
-            $result = $this->model('SmartBank_model')->requestOtp($phone, 'marketplace');
-            $_SESSION['smartbank_marketplace_link'] = ['request_id' => $result['request_id']];
-            flash('success', 'OTP dikirim ke Inbox SmartBank.');
-        } catch (Throwable $error) { flash('error', $error->getMessage()); }
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            verify_csrf();
+            try {
+                $phone = trim($_POST['phone'] ?? '');
+                if ($phone === '') throw new RuntimeException('Nomor SmartBank wajib diisi.');
+                $result = $this->model('SmartBank_model')->requestOtp($phone, 'marketplace');
+                $_SESSION['smartbank_marketplace_link'] = ['request_id' => $result['request_id']];
+                flash('success', 'OTP dikirim ke Inbox SmartBank.');
+            } catch (Throwable $error) {
+                log_app_error($error);
+                flash('error', $error->getMessage());
+            }
+        }
         $this->redirect('admin/smartbank');
     }
 
     public function smartbankOtpVerify()
     {
         require_role('admin');
-        try {
-            $requestId = $_SESSION['smartbank_marketplace_link']['request_id'] ?? '';
-            $code = trim($_POST['code'] ?? '');
-            if ($requestId === '' || !preg_match('/^\d{6}$/', $code)) throw new RuntimeException('OTP tidak valid.');
-            $result = $this->model('SmartBank_model')->verifyOtp($requestId, $code, 'marketplace');
-            $_SESSION['smartbank_marketplace_link']['verification_token'] = $result['verification_token'];
-            flash('success', 'OTP valid. Konfirmasi wallet penerima.');
-        } catch (Throwable $error) { flash('error', $error->getMessage()); }
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            verify_csrf();
+            try {
+                $requestId = $_SESSION['smartbank_marketplace_link']['request_id'] ?? '';
+                $code = trim($_POST['code'] ?? '');
+                if ($requestId === '' || !preg_match('/^\d{6}$/', $code)) throw new RuntimeException('OTP tidak valid.');
+                $result = $this->model('SmartBank_model')->verifyOtp($requestId, $code, 'marketplace');
+                $_SESSION['smartbank_marketplace_link']['verification_token'] = $result['verification_token'];
+                flash('success', 'OTP valid. Konfirmasi wallet penerima.');
+            } catch (Throwable $error) {
+                log_app_error($error);
+                flash('error', $error->getMessage());
+            }
+        }
         $this->redirect('admin/smartbank');
     }
 
     public function smartbankLink()
     {
         require_role('admin');
-        try {
-            $token = $_SESSION['smartbank_marketplace_link']['verification_token'] ?? '';
-            if ($token === '') throw new RuntimeException('Verifikasi OTP terlebih dahulu.');
-            $this->model('SmartBank_model')->link(SMARTBANK_MARKETPLACE_EXTERNAL_ID, $token);
-            unset($_SESSION['smartbank_marketplace_link']);
-            flash('success', 'Wallet penerima Marketplace berhasil ditautkan.');
-        } catch (Throwable $error) { flash('error', $error->getMessage()); }
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            verify_csrf();
+            try {
+                $token = $_SESSION['smartbank_marketplace_link']['verification_token'] ?? '';
+                if ($token === '') throw new RuntimeException('Verifikasi OTP terlebih dahulu.');
+                $this->model('SmartBank_model')->link(SMARTBANK_MARKETPLACE_EXTERNAL_ID, $token);
+                unset($_SESSION['smartbank_marketplace_link']);
+                flash('success', 'Wallet penerima Marketplace berhasil ditautkan.');
+            } catch (Throwable $error) {
+                log_app_error($error);
+                flash('error', $error->getMessage());
+            }
+        }
         $this->redirect('admin/smartbank');
     }
 }

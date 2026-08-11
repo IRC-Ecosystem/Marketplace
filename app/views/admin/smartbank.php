@@ -17,11 +17,11 @@
         </div>
         <?php if (empty($smartBank['linked'])): ?>
             <?php if (empty($smartBank['request_id'])): ?>
-                <form action="<?= BASEURL ?>admin/smartbankOtpRequest" method="post" class="mt-6 flex max-w-xl flex-col gap-3 sm:flex-row"><input name="phone" type="tel" placeholder="Nomor SmartBank treasury" class="min-w-0 flex-1 rounded-lg border border-slate-300 px-4 py-3" required><button class="rounded-lg bg-emerald-700 px-5 py-3 text-sm font-extrabold text-white">Kirim OTP</button></form>
+                <form action="<?= BASEURL ?>admin/smartbankOtpRequest" method="post" class="mt-6 flex max-w-xl flex-col gap-3 sm:flex-row"><?= csrf_field() ?><input name="phone" type="tel" placeholder="Nomor SmartBank treasury" class="min-w-0 flex-1 rounded-lg border border-slate-300 px-4 py-3" required><button class="rounded-lg bg-emerald-700 px-5 py-3 text-sm font-extrabold text-white">Kirim OTP</button></form>
             <?php elseif (empty($smartBank['verified'])): ?>
-                <form action="<?= BASEURL ?>admin/smartbankOtpVerify" method="post" class="mt-6 flex max-w-xl gap-3"><input name="code" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" placeholder="OTP 6 digit" class="min-w-0 flex-1 rounded-lg border border-slate-300 px-4 py-3 font-mono" required><button class="rounded-lg bg-emerald-700 px-5 py-3 text-sm font-extrabold text-white">Verifikasi</button></form>
+                <form action="<?= BASEURL ?>admin/smartbankOtpVerify" method="post" class="mt-6 flex max-w-xl gap-3"><?= csrf_field() ?><input name="code" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" placeholder="OTP 6 digit" class="min-w-0 flex-1 rounded-lg border border-slate-300 px-4 py-3 font-mono" required><button class="rounded-lg bg-emerald-700 px-5 py-3 text-sm font-extrabold text-white">Verifikasi</button></form>
             <?php else: ?>
-                <form action="<?= BASEURL ?>admin/smartbankLink" method="post" class="mt-6"><button class="rounded-lg bg-emerald-700 px-5 py-3 text-sm font-extrabold text-white">Tetapkan Wallet Penerima</button></form>
+                <form action="<?= BASEURL ?>admin/smartbankLink" method="post" class="mt-6"><?= csrf_field() ?><button class="rounded-lg bg-emerald-700 px-5 py-3 text-sm font-extrabold text-white">Tetapkan Wallet Penerima</button></form>
             <?php endif; ?>
         <?php endif; ?>
     </article>

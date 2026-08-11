@@ -174,11 +174,13 @@ $counts = [
                         <div class="mt-4 grid gap-2">
                             <?php if ($status === 'processing'): ?>
                                 <form method="post" action="<?= BASEURL ?>toko/orderStatus">
+                                    <?= csrf_field() ?>
                                     <input type="hidden" name="order_id" value="<?= $orderId ?>">
                                     <input type="hidden" name="status" value="shipped">
                                     <button class="w-full rounded-lg bg-[#00685f] px-4 py-3 text-sm font-extrabold text-white transition hover:bg-[#005049]">Terima & Kirim</button>
                                 </form>
                                 <form method="post" action="<?= BASEURL ?>toko/orderStatus" class="grid grid-cols-[1fr_auto] gap-2">
+                                    <?= csrf_field() ?>
                                     <input type="hidden" name="order_id" value="<?= $orderId ?>">
                                     <input type="hidden" name="status" value="cancelled">
                                     <button class="rounded-lg border border-[#bcc9c6] px-4 py-3 text-sm font-extrabold text-[#0b1c30] transition hover:bg-[#eff4ff]">Tolak</button>
@@ -188,6 +190,7 @@ $counts = [
                                 </form>
                             <?php elseif ($status === 'shipped'): ?>
                                 <form method="post" action="<?= BASEURL ?>toko/orderStatus">
+                                    <?= csrf_field() ?>
                                     <input type="hidden" name="order_id" value="<?= $orderId ?>">
                                     <input type="hidden" name="status" value="completed">
                                     <button class="w-full rounded-lg bg-[#00685f] px-4 py-3 text-sm font-extrabold text-white transition hover:bg-[#005049]">Tandai Selesai</button>

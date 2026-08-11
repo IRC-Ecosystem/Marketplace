@@ -1,7 +1,55 @@
 <?php
 
 if (session_status() === PHP_SESSION_NONE) {
+    ini_set('session.cookie_httponly', '1');
+    ini_set('session.cookie_samesite', 'Lax');
+    if (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') {
+        ini_set('session.cookie_secure', '1');
+    }
     session_start();
+}
+
+function e(?string $value): string
+{
+    return htmlspecialchars($value ?? '', ENT_QUOTES, 'UTF-8');
+}
+
+function csrf_token(): string
+{
+    if (empty($_SESSION['csrf_token'])) {
+        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+    }
+    return $_SESSION['csrf_token'];
+}
+
+function csrf_field(): string
+{
+    return '<input type="hidden" name="csrf_token" value="' . csrf_token() . '">';
+}
+
+function verify_csrf(): void
+{
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        $token = $_POST['csrf_token'] ?? $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
+        if (!hash_equals(csrf_token(), (string) $token)) {
+            http_response_code(403);
+            die('Invalid CSRF Token');
+        }
+    }
+}
+
+function check_rate_limit(string $key, int $maxAttempts = 5, int $decaySeconds = 300): bool
+{
+    $attempts = $_SESSION['rate_limits'][$key] ?? [];
+    $currentTime = time();
+    $attempts = array_filter($attempts, fn($timestamp) => ($currentTime - $timestamp) < $decaySeconds);
+    $_SESSION['rate_limits'][$key] = $attempts;
+    return count($attempts) < $maxAttempts;
+}
+
+function hit_rate_limit(string $key): void
+{
+    $_SESSION['rate_limits'][$key][] = time();
 }
 
 function current_user(): ?array
@@ -60,3 +108,4 @@ function flash(string $key, ?string $value = null): ?string
     unset($_SESSION['flash'][$key]);
     return $message;
 }
+

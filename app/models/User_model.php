@@ -11,7 +11,7 @@ class User_model
 
     public function create(array $data): bool
     {
-        $stmt = $this->db->prepare('INSERT INTO users (name, email, password, role, address, phone) VALUES (?, ?, ?, "user", ?, ?)');
+        $stmt = $this->db->prepare('INSERT INTO users (name, email, password, role, status, address, phone) VALUES (?, ?, ?, "user", "active", ?, ?)');
         $ok = $stmt->execute([
             trim($data['name']),
             strtolower(trim($data['email'])),
@@ -44,11 +44,17 @@ class User_model
 
     public function all(): array
     {
-        return $this->db->query('SELECT u.id, u.name, u.email, u.role, u.created_at, COALESCE(w.balance, 0) balance FROM users u LEFT JOIN wallets w ON w.user_id = u.id ORDER BY u.created_at DESC')->fetchAll();
+        return $this->db->query('SELECT u.id, u.name, u.email, u.role, u.status, u.created_at, COALESCE(w.balance, 0) balance FROM users u LEFT JOIN wallets w ON w.user_id = u.id ORDER BY u.created_at DESC')->fetchAll();
     }
 
     public function countByRole(): array
     {
         return $this->db->query('SELECT role, COUNT(*) total FROM users GROUP BY role')->fetchAll();
+    }
+
+    public function toggleStatus(int $id): bool
+    {
+        $stmt = $this->db->prepare('UPDATE users SET status = IF(status = "active", "suspended", "active") WHERE id = ? AND role != "admin"');
+        return $stmt->execute([$id]);
     }
 }

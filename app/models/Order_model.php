@@ -18,12 +18,13 @@ class Order_model
         $this->db->beginTransaction();
         try {
             $orderCode = 'PK-' . date('YmdHis') . '-' . random_int(100, 999);
-            $stmt = $this->db->prepare('INSERT INTO orders (user_id, order_code, shipping_address, subtotal, marketplace_fee, gateway_fee, bank_fee, tax, shipping_fee, total, payment_status, order_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, "pending", "processing")');
+            $stmt = $this->db->prepare('INSERT INTO orders (user_id, order_code, shipping_address, subtotal, voucher_discount, marketplace_fee, gateway_fee, bank_fee, tax, shipping_fee, total, payment_status, order_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, "pending", "processing")');
             $stmt->execute([
                 $userId,
                 $orderCode,
                 $address,
                 $summary['subtotal'],
+                $summary['discount'] ?? 0,
                 $summary['marketplaceFee'],
                 $summary['gatewayFee'],
                 $summary['bankFee'],
@@ -33,7 +34,7 @@ class Order_model
             ]);
             $orderId = (int) $this->db->lastInsertId();
 
-            $itemStmt = $this->db->prepare('INSERT INTO order_items (order_id, product_id, store_id, product_name, price, qty, subtotal) VALUES (?, ?, ?, ?, ?, ?, ?)');
+            $itemStmt = $this->db->prepare('INSERT INTO order_items (order_id, product_id, store_id, product_name, price, qty, subtotal, item_status) VALUES (?, ?, ?, ?, ?, ?, ?, "processing")');
             $stockStmt = $this->db->prepare('UPDATE products SET stock = stock - ? WHERE id = ? AND stock >= ?');
             foreach ($summary['items'] as $item) {
                 $product = $item['product'];
@@ -84,6 +85,35 @@ class Order_model
         }
     }
 
+    public function cancelOrder(int $orderId, int $userId): bool
+    {
+        $this->db->beginTransaction();
+        try {
+            $order = $this->findByUser($orderId, $userId);
+            if (!$order || $order['order_status'] === 'completed' || $order['order_status'] === 'cancelled') {
+                $this->db->rollBack();
+                return false;
+            }
+
+            // Restore stocks
+            $itemsStmt = $this->db->prepare('SELECT product_id, qty FROM order_items WHERE order_id = ?');
+            $itemsStmt->execute([$orderId]);
+            $restoreStmt = $this->db->prepare('UPDATE products SET stock = stock + ? WHERE id = ?');
+            foreach ($itemsStmt->fetchAll() as $item) {
+                $restoreStmt->execute([$item['qty'], $item['product_id']]);
+            }
+
+            $this->db->prepare('UPDATE orders SET order_status = "cancelled" WHERE id = ?')->execute([$orderId]);
+            $this->db->prepare('UPDATE order_items SET item_status = "cancelled" WHERE order_id = ?')->execute([$orderId]);
+
+            $this->db->commit();
+            return true;
+        } catch (Throwable $e) {
+            $this->db->rollBack();
+            return false;
+        }
+    }
+
     public function itemsByUser(int $userId): array
     {
         $stmt = $this->db->prepare('
@@ -107,7 +137,7 @@ class Order_model
 
     public function itemsByStore(int $storeId): array
     {
-        $stmt = $this->db->prepare('SELECT oi.*, o.order_code, o.order_status, o.payment_status, o.created_at FROM order_items oi JOIN orders o ON o.id = oi.order_id WHERE oi.store_id = ? ORDER BY o.created_at DESC');
+        $stmt = $this->db->prepare('SELECT oi.*, o.order_code, o.order_status global_order_status, o.payment_status, o.created_at FROM order_items oi JOIN orders o ON o.id = oi.order_id WHERE oi.store_id = ? ORDER BY o.created_at DESC');
         $stmt->execute([$storeId]);
         return $stmt->fetchAll();
     }
@@ -118,12 +148,12 @@ class Order_model
             SELECT
                 COALESCE(SUM(CASE WHEN DATE(o.created_at) = CURDATE() THEN oi.subtotal ELSE 0 END), 0) omzet_hari_ini,
                 COALESCE(SUM(CASE WHEN YEAR(o.created_at) = YEAR(CURDATE()) AND MONTH(o.created_at) = MONTH(CURDATE()) THEN oi.subtotal ELSE 0 END), 0) omzet_bulan_ini,
-                COUNT(DISTINCT CASE WHEN o.order_status IN ("processing", "shipped") THEN o.id END) pesanan_aktif,
-                COUNT(DISTINCT CASE WHEN o.order_status = "processing" THEN o.id END) pesanan_baru,
-                COUNT(DISTINCT CASE WHEN o.order_status = "completed" THEN o.id END) pesanan_selesai,
-                COUNT(DISTINCT CASE WHEN o.order_status = "cancelled" THEN o.id END) pesanan_batal,
+                COUNT(DISTINCT CASE WHEN oi.item_status IN ("processing", "shipped") THEN oi.id END) pesanan_aktif,
+                COUNT(DISTINCT CASE WHEN oi.item_status = "processing" THEN oi.id END) pesanan_baru,
+                COUNT(DISTINCT CASE WHEN oi.item_status = "completed" THEN oi.id END) pesanan_selesai,
+                COUNT(DISTINCT CASE WHEN oi.item_status = "cancelled" THEN oi.id END) pesanan_batal,
                 COALESCE(SUM(oi.subtotal), 0) total_pendapatan,
-                COALESCE(SUM(o.marketplace_fee), 0) total_fee_marketplace
+                COALESCE(SUM(oi.subtotal * 0.02), 0) total_fee_marketplace
             FROM order_items oi
             JOIN orders o ON o.id = oi.order_id
             WHERE oi.store_id = ?
@@ -202,7 +232,71 @@ class Order_model
             return false;
         }
 
-        $stmt = $this->db->prepare('UPDATE orders o SET o.order_status = ? WHERE o.id = ? AND EXISTS (SELECT 1 FROM order_items oi WHERE oi.order_id = o.id AND oi.store_id = ?)');
-        return $stmt->execute([$status, $orderId, $storeId]);
+        $this->db->beginTransaction();
+        try {
+            // Update items for this store
+            $stmt = $this->db->prepare('UPDATE order_items SET item_status = ? WHERE order_id = ? AND store_id = ?');
+            $stmt->execute([$status, $orderId, $storeId]);
+
+            // Handle stock refund if cancelled
+            if ($status === 'cancelled') {
+                $itemsStmt = $this->db->prepare('SELECT product_id, qty FROM order_items WHERE order_id = ? AND store_id = ?');
+                $itemsStmt->execute([$orderId, $storeId]);
+                $restoreStmt = $this->db->prepare('UPDATE products SET stock = stock + ? WHERE id = ?');
+                foreach ($itemsStmt->fetchAll() as $item) {
+                    $restoreStmt->execute([$item['qty'], $item['product_id']]);
+                }
+            }
+
+            // Handle seller payout release if completed
+            if ($status === 'completed') {
+                $payoutStmt = $this->db->prepare('SELECT SUM(subtotal) subtotal FROM order_items WHERE order_id = ? AND store_id = ?');
+                $payoutStmt->execute([$orderId, $storeId]);
+                $row = $payoutStmt->fetch();
+                $subtotal = (float) ($row['subtotal'] ?? 0);
+
+                if ($subtotal > 0) {
+                    $fee = round($subtotal * 0.02);
+                    $net = $subtotal - $fee;
+
+                    // Insert payout record
+                    $this->db->prepare('INSERT INTO seller_payouts (store_id, order_id, amount, marketplace_fee, net_amount, status) VALUES (?, ?, ?, ?, ?, "released")')->execute([
+                        $storeId, $orderId, $subtotal, $fee, $net
+                    ]);
+
+                    // Credit store owner wallet
+                    $ownerStmt = $this->db->prepare('SELECT owner_id FROM stores WHERE id = ?');
+                    $ownerStmt->execute([$storeId]);
+                    $ownerId = (int) $ownerStmt->fetchColumn();
+
+                    if ($ownerId) {
+                        $this->db->prepare('UPDATE wallets SET balance = balance + ? WHERE user_id = ?')->execute([$net, $ownerId]);
+                        $this->db->prepare('INSERT INTO ledgers (user_id, order_id, type, amount, description) VALUES (?, ?, "credit", ?, "Payout Penjualan Order PasarKita")')->execute([
+                            $ownerId, $orderId, $net
+                        ]);
+                    }
+                }
+            }
+
+            // Sync global order_status if all items are completed or cancelled
+            $allCompleted = $this->db->prepare('SELECT COUNT(*) FROM order_items WHERE order_id = ? AND item_status != "completed"');
+            $allCompleted->execute([$orderId]);
+            if ((int) $allCompleted->fetchColumn() === 0) {
+                $this->db->prepare('UPDATE orders SET order_status = "completed" WHERE id = ?')->execute([$orderId]);
+            }
+
+            $allCancelled = $this->db->prepare('SELECT COUNT(*) FROM order_items WHERE order_id = ? AND item_status != "cancelled"');
+            $allCancelled->execute([$orderId]);
+            if ((int) $allCancelled->fetchColumn() === 0) {
+                $this->db->prepare('UPDATE orders SET order_status = "cancelled" WHERE id = ?')->execute([$orderId]);
+            }
+
+            $this->db->commit();
+            return true;
+        } catch (Throwable $e) {
+            $this->db->rollBack();
+            return false;
+        }
     }
 }
+

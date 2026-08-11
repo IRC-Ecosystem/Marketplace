@@ -48,3 +48,15 @@ define('SMARTBANK_CONNECTOR_URL', rtrim(env_value('SMARTBANK_CONNECTOR_URL', 'ht
 define('SMARTBANK_CONNECTOR_API_KEY', env_value('SMARTBANK_CONNECTOR_API_KEY', ''));
 define('SMARTBANK_MARKETPLACE_EXTERNAL_ID', env_value('SMARTBANK_MARKETPLACE_EXTERNAL_ID', 'marketplace-merchant-main'));
 define('SMARTBANK_CONNECTOR_TIMEOUT_MS', (int) env_value('SMARTBANK_CONNECTOR_TIMEOUT_MS', 10000));
+
+function log_app_error(Throwable $e): void
+{
+    $logFile = dirname(__DIR__) . '/logs/error.log';
+    $dir = dirname($logFile);
+    if (!is_dir($dir)) {
+        @mkdir($dir, 0755, true);
+    }
+    $message = date('[Y-m-d H:i:s] ') . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine() . "\n" . $e->getTraceAsString() . "\n\n";
+    @file_put_contents($logFile, $message, FILE_APPEND);
+}
+
