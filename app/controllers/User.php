@@ -84,7 +84,24 @@ class User extends Controllers
 
     public function chat()
     {
-        $this->renderUser('user/chat', 'Chat Bantuan');
+        require_role('user');
+        $userId = current_user()['id'];
+        $chatModel = $this->model('Chat_model');
+        $contacts = $chatModel->contactsForUser($userId);
+        $activeReceiverId = isset($_GET['with']) ? (int) $_GET['with'] : ($contacts[0]['id'] ?? 2);
+        $chats = $chatModel->conversation($userId, $activeReceiverId);
+
+        $data = [
+            'title' => 'Chat Bantuan & Seller',
+            'user' => $this->model('User_model')->find($userId),
+            'contacts' => $contacts,
+            'activeReceiverId' => $activeReceiverId,
+            'chats' => $chats,
+        ];
+
+        $this->view('templates/header', $data);
+        $this->view('user/chat', $data);
+        $this->view('templates/footer');
     }
 
     public function profile()
@@ -179,16 +196,17 @@ class User extends Controllers
     public function sendChat()
     {
         require_role('user');
+        $receiverId = 2;
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             verify_csrf();
-            $receiverId = (int) ($_POST['receiver_id'] ?? 1); // Default to Admin
+            $receiverId = (int) ($_POST['receiver_id'] ?? 2);
             $message = trim($_POST['message'] ?? '');
-            if ($message !== '') {
+            if ($message !== '' && $receiverId > 0) {
                 $this->model('Chat_model')->send(current_user()['id'], $receiverId, $message);
                 flash('success', 'Pesan terkirim.');
             }
         }
-        $this->redirect('user/chat');
+        $this->redirect('user/chat?with=' . $receiverId);
     }
 
     public function smartbankOtpRequest()

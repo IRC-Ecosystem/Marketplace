@@ -92,7 +92,29 @@ class Toko extends Controllers
 
     public function chat()
     {
-        $this->renderSeller('toko/chat', 'Chat Pembeli');
+        require_role('seller');
+        $user = current_user();
+        $store = $this->store();
+        if (!$store) {
+            $this->redirect('toko');
+        }
+
+        $chatModel = $this->model('Chat_model');
+        $contacts = $chatModel->contactsForUser($user['id']);
+        $activeReceiverId = isset($_GET['with']) ? (int) $_GET['with'] : ($contacts[0]['id'] ?? 3);
+        $chats = $chatModel->conversation($user['id'], $activeReceiverId);
+
+        $data = [
+            'title' => 'Chat Pembeli',
+            'store' => $store,
+            'contacts' => $contacts,
+            'activeReceiverId' => $activeReceiverId,
+            'chats' => $chats,
+        ];
+
+        $this->view('templates/header', $data);
+        $this->view('toko/chat', $data);
+        $this->view('templates/footer');
     }
 
     public function finance()
@@ -190,15 +212,16 @@ class Toko extends Controllers
     {
         require_role('seller');
         $store = $this->store();
+        $receiverId = 3;
         if ($store && $_SERVER['REQUEST_METHOD'] === 'POST') {
             verify_csrf();
             $receiverId = (int) ($_POST['receiver_id'] ?? 3); // Default to buyer
             $message = trim($_POST['message'] ?? '');
-            if ($message !== '') {
+            if ($message !== '' && $receiverId > 0) {
                 $this->model('Chat_model')->send(current_user()['id'], $receiverId, $message, $store['id']);
                 flash('success', 'Pesan balasan terkirim.');
             }
         }
-        $this->redirect('toko/chat');
+        $this->redirect('toko/chat?with=' . $receiverId);
     }
 }
