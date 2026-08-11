@@ -24,18 +24,19 @@ $inactiveStores = max(0, $totalStores - $activeStores);
 $formatNumber = static fn (int $value): string => number_format($value, 0, ',', '.');
 $formatCurrency = static fn (float $value): string => 'Rp' . number_format($value, 0, ',', '.');
 
-$monthlyRevenue = [];
+$allMonths = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+$monthlyData = array_fill_keys($allMonths, 0.0);
+
 foreach ($orders as $order) {
     if (($order['payment_status'] ?? '') !== 'paid') {
         continue;
     }
-    $key = date('M', strtotime($order['created_at'] ?? 'now'));
-    $monthlyRevenue[$key] = ($monthlyRevenue[$key] ?? 0) + (float) ($order['total'] ?? 0);
+    $m = date('M', strtotime($order['created_at'] ?? 'now'));
+    if (isset($monthlyData[$m])) {
+        $monthlyData[$m] += (float) ($order['total'] ?? 0);
+    }
 }
-if (empty($monthlyRevenue)) {
-    $monthlyRevenue = [date('M') => 0];
-}
-$maxMonthlyRevenue = max(1, ...array_values($monthlyRevenue));
+$maxMonthlyRevenue = max(1, ...array_values($monthlyData));
 
 $roleTotal = max(1, array_sum(array_map('intval', $roles)));
 $buyerPercent = round(((int) ($roles['user'] ?? 0) / $roleTotal) * 100);
@@ -110,17 +111,10 @@ uasort($regional, static fn ($a, $b) => $b['revenue'] <=> $a['revenue']);
                     <h2 class="text-xl font-extrabold text-slate-950">Pertumbuhan Pendapatan Platform</h2>
                     <p class="mt-1 text-sm text-slate-600">Total volume transaksi bulanan berdasarkan order paid.</p>
                 </div>
-                <span class="rounded-full bg-emerald-50 px-3 py-1 text-xs font-extrabold text-emerald-700"><?= count($monthlyRevenue) ?> periode</span>
+                <span class="rounded-full bg-emerald-50 px-3 py-1 text-xs font-extrabold text-emerald-700">12 Periode Bulanan</span>
             </div>
-            <div class="relative h-[360px] overflow-hidden rounded-lg bg-emerald-50/80">
-                <svg class="absolute inset-0 h-full w-full" preserveAspectRatio="none" viewBox="0 0 1000 360" role="img" aria-label="Grafik pertumbuhan pendapatan platform">
-                    <path d="M32 312 C 170 276, 270 272, 352 276 C 474 280, 552 214, 620 138 C 682 70, 772 106, 824 210 C 873 306, 945 279, 1000 80 L1000 360 L32 360 Z" fill="#047857" opacity="0.72"></path>
-                    <path d="M0 316 C 145 278, 260 270, 350 276 C 478 284, 554 213, 620 139 C 684 70, 774 107, 824 210 C 873 306, 946 279, 1000 79" fill="none" stroke="#007a64" stroke-linecap="round" stroke-linejoin="round" stroke-width="9"></path>
-                </svg>
-                <div class="absolute inset-x-8 bottom-6 flex items-center justify-center">
-                    <?php $labelMonth = array_key_last($monthlyRevenue) ?: date('M'); ?>
-                    <span class="text-sm font-extrabold text-slate-500"><?= htmlspecialchars($labelMonth) ?></span>
-                </div>
+            <div class="relative h-[340px] w-full rounded-lg bg-emerald-50/50 p-4">
+                <canvas id="platformRevenueChart"></canvas>
             </div>
         </article>
 
@@ -209,3 +203,62 @@ uasort($regional, static fn ($a, $b) => $b['revenue'] <=> $a['revenue']);
         </div>
     </section>
 </section>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const canvas = document.getElementById('platformRevenueChart');
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+    const months = <?= json_encode(array_keys($monthlyData)) ?>;
+    const revenues = <?= json_encode(array_values($monthlyData)) ?>;
+
+    const gradient = ctx.createLinearGradient(0, 0, 0, 300);
+    gradient.addColorStop(0, 'rgba(4, 120, 87, 0.4)');
+    gradient.addColorStop(1, 'rgba(4, 120, 87, 0.0)');
+
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: months,
+            datasets: [{
+                label: 'Pendapatan (Rp)',
+                data: revenues,
+                borderColor: '#047857',
+                borderWidth: 3,
+                backgroundColor: gradient,
+                fill: true,
+                tension: 0.4,
+                pointRadius: 4,
+                pointHoverRadius: 6,
+                pointBackgroundColor: '#047857'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: function (context) {
+                            return ' Pendapatan: Rp ' + new Intl.NumberFormat('id-ID').format(context.raw);
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function (value) {
+                            return 'Rp ' + new Intl.NumberFormat('id-ID').format(value);
+                        }
+                    }
+                }
+            }
+        }
+    });
+});
+</script>
