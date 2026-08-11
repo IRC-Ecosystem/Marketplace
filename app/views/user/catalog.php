@@ -115,6 +115,7 @@ $cartCount = count($data['cart']['items']);
                                         <span class="text-xs font-bold text-slate-500">Ready</span>
                                     </div>
                                     <form method="post" action="<?= BASEURL ?>user/addCart" class="mt-4 grid grid-cols-[86px_1fr] gap-2">
+                                        <?= csrf_field() ?>
                                         <input type="hidden" name="product_id" value="<?= (int) $product['id'] ?>">
                                         <input type="number" name="qty" min="1" max="<?= max(1, (int) $product['stock']) ?>" value="1" class="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-emerald-700 focus:ring-emerald-100">
                                         <button class="rounded-lg bg-emerald-700 px-3 py-2 text-sm font-bold text-white hover:bg-emerald-800 disabled:bg-slate-300 disabled:text-slate-500" <?= (int) $product['stock'] <= 0 ? 'disabled' : '' ?>>

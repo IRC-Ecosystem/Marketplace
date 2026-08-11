@@ -131,7 +131,7 @@ function sidebar_icon(string $name): string
                 </div>
             </div>
         </header>
-        <main class="px-4 py-6 lg:px-8">
+        <main class="px-4 py-6 pb-20 lg:px-8 lg:pb-6">
 <?php else: ?>
 <header class="sticky top-0 z-20 border-b border-slate-200 bg-white/95 backdrop-blur">
     <nav class="mx-auto flex max-w-7xl items-center justify-between px-4 py-3">
@@ -145,9 +145,35 @@ function sidebar_icon(string $name): string
 </header>
 <main class="<?= $currentBase === 'home' ? 'px-0 py-0' : 'mx-auto max-w-7xl px-4 py-8' ?>">
 <?php endif; ?>
+
+<!-- Floating Toast Container -->
+<div id="toastContainer" class="fixed top-5 right-5 z-[100] flex flex-col gap-3 max-w-md w-full pointer-events-none">
     <?php if ($message = flash('success')): ?>
-        <div class="mb-5 rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800"><?= htmlspecialchars($message) ?></div>
+        <div class="toast-item pointer-events-auto flex items-center gap-3 rounded-xl border border-emerald-200 bg-white p-4 shadow-xl text-slate-900 transition-all transform translate-y-0 duration-300">
+            <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
+                <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            </div>
+            <div class="flex-1 text-sm font-semibold text-slate-800"><?= htmlspecialchars($message) ?></div>
+            <button onclick="this.parentElement.remove()" class="text-slate-400 hover:text-slate-700">&times;</button>
+        </div>
     <?php endif; ?>
     <?php if ($message = flash('error')): ?>
-        <div class="mb-5 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"><?= htmlspecialchars($message) ?></div>
+        <div class="toast-item pointer-events-auto flex items-center gap-3 rounded-xl border border-red-200 bg-white p-4 shadow-xl text-slate-900 transition-all transform translate-y-0 duration-300">
+            <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-red-100 text-red-700">
+                <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </div>
+            <div class="flex-1 text-sm font-semibold text-slate-800"><?= htmlspecialchars($message) ?></div>
+            <button onclick="this.parentElement.remove()" class="text-slate-400 hover:text-slate-700">&times;</button>
+        </div>
     <?php endif; ?>
+</div>
+
+<script>
+    setTimeout(() => {
+        document.querySelectorAll('.toast-item').forEach(toast => {
+            toast.style.opacity = '0';
+            toast.style.transform = 'translateY(-12px)';
+            setTimeout(() => toast.remove(), 300);
+        });
+    }, 4000);
+</script>

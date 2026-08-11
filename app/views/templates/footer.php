@@ -62,7 +62,50 @@
         default => BASEURL . 'user/chat',
     };
     ?>
-    <a href="<?= $supportHref ?>" class="fixed bottom-6 right-6 z-50 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-700 text-white shadow-xl shadow-emerald-900/20 transition hover:scale-105 hover:bg-emerald-800" aria-label="Bantuan">
+    <!-- Mobile Bottom Navigation Bar -->
+    <nav class="fixed bottom-0 left-0 right-0 z-50 flex items-center justify-around border-t border-slate-200 bg-white/95 py-2 backdrop-blur lg:hidden shadow-lg">
+        <?php if (($footerUser['role'] ?? '') === 'user'): ?>
+            <a href="<?= BASEURL ?>user" class="flex flex-col items-center gap-1 text-[10px] font-extrabold text-slate-600 hover:text-emerald-700">
+                <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg>
+                Beranda
+            </a>
+            <a href="<?= BASEURL ?>user/catalog" class="flex flex-col items-center gap-1 text-[10px] font-extrabold text-slate-600 hover:text-emerald-700">
+                <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m21 8-9-5-9 5 9 5 9-5Z"/><path d="M3 8v8l9 5 9-5V8"/></svg>
+                Katalog
+            </a>
+            <a href="<?= BASEURL ?>user/cart" class="flex flex-col items-center gap-1 text-[10px] font-extrabold text-slate-600 hover:text-emerald-700">
+                <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h8.78a2 2 0 0 0 1.95-1.57L21 8H5.12"/></svg>
+                Keranjang
+            </a>
+            <a href="<?= BASEURL ?>user/orders" class="flex flex-col items-center gap-1 text-[10px] font-extrabold text-slate-600 hover:text-emerald-700">
+                <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2h12l2 4v16H4V6z"/><path d="M6 6h12"/><path d="M8 11h8"/></svg>
+                Order
+            </a>
+            <a href="<?= BASEURL ?>user/chat" class="flex flex-col items-center gap-1 text-[10px] font-extrabold text-slate-600 hover:text-emerald-700">
+                <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a4 4 0 0 1-4 4H7l-4 4V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/></svg>
+                Chat
+            </a>
+        <?php elseif (($footerUser['role'] ?? '') === 'seller'): ?>
+            <a href="<?= BASEURL ?>toko" class="flex flex-col items-center gap-1 text-[10px] font-extrabold text-slate-600 hover:text-emerald-700">
+                <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg>
+                Dashboard
+            </a>
+            <a href="<?= BASEURL ?>toko/products" class="flex flex-col items-center gap-1 text-[10px] font-extrabold text-slate-600 hover:text-emerald-700">
+                <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m21 8-9-5-9 5 9 5 9-5Z"/><path d="M3 8v8l9 5 9-5V8"/></svg>
+                Produk
+            </a>
+            <a href="<?= BASEURL ?>toko/orders" class="flex flex-col items-center gap-1 text-[10px] font-extrabold text-slate-600 hover:text-emerald-700">
+                <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2h12l2 4v16H4V6z"/><path d="M6 6h12"/><path d="M8 11h8"/></svg>
+                Pesanan
+            </a>
+            <a href="<?= BASEURL ?>toko/chat" class="flex flex-col items-center gap-1 text-[10px] font-extrabold text-slate-600 hover:text-emerald-700">
+                <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a4 4 0 0 1-4 4H7l-4 4V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/></svg>
+                Chat
+            </a>
+        <?php endif; ?>
+    </nav>
+
+    <a href="<?= $supportHref ?>" class="hidden lg:flex fixed bottom-6 right-6 z-50 h-16 w-16 items-center justify-center rounded-full bg-emerald-700 text-white shadow-xl shadow-emerald-900/20 transition hover:scale-105 hover:bg-emerald-800" aria-label="Bantuan">
         <svg class="h-7 w-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M18 11a6 6 0 0 0-12 0v4a3 3 0 0 0 3 3h1"/>
             <path d="M18 11v5a2 2 0 0 1-2 2h-3"/>
