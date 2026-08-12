@@ -212,6 +212,7 @@ $safeAttr = static fn ($value): string => htmlspecialchars((string) $value, ENT_
 <div id="productDrawer" class="product-drawer fixed inset-0 z-[70] bg-[#0b1c30]/45" aria-hidden="true">
     <div class="absolute inset-y-0 right-0 flex w-full justify-end">
         <form id="productForm" method="post" action="<?= BASEURL ?>toko/product" class="product-drawer-panel flex h-full w-full max-w-4xl flex-col overflow-y-auto bg-[#f8f9ff] shadow-2xl transition-transform">
+            <?= csrf_field() ?>
             <div class="sticky top-0 z-10 flex items-center justify-between border-b border-[#bcc9c6] bg-white px-6 py-5">
                 <div>
                     <p class="text-xs font-extrabold uppercase tracking-wide text-[#00685f]">Produk Seller</p>

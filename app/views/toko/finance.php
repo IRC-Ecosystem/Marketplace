@@ -12,6 +12,41 @@ $withdrawable = max(0, $revenue - $marketplaceFee);
 $target = max(55000000, $monthRevenue * 1.3, 1);
 $targetPercent = min(100, (int) (($monthRevenue / $target) * 100));
 $processedWithdrawals = max(1, (int) ceil(count($orders) / 3));
+
+$dailyRevenue = [];
+for ($i = 6; $i >= 0; $i--) {
+    $timestamp = strtotime("-$i days");
+    $dayLabel = match (date('D', $timestamp)) {
+        'Mon' => 'Sen',
+        'Tue' => 'Sel',
+        'Wed' => 'Rab',
+        'Thu' => 'Kam',
+        'Fri' => 'Jum',
+        'Sat' => 'Sab',
+        'Sun' => 'Min',
+        default => date('D', $timestamp),
+    };
+    $dailyRevenue[$dayLabel] = 0.0;
+}
+
+foreach ($orders as $order) {
+    if (($order['payment_status'] ?? '') === 'paid' || ($order['order_status'] ?? '') === 'completed') {
+        $timestamp = strtotime($order['created_at'] ?? 'now');
+        $dayLabel = match (date('D', $timestamp)) {
+            'Mon' => 'Sen',
+            'Tue' => 'Sel',
+            'Wed' => 'Rab',
+            'Thu' => 'Kam',
+            'Fri' => 'Jum',
+            'Sat' => 'Sab',
+            'Sun' => 'Min',
+            default => date('D', $timestamp),
+        };
+        if (isset($dailyRevenue[$dayLabel])) {
+            $dailyRevenue[$dayLabel] += (float) ($order['subtotal'] ?? $order['total'] ?? 0);
+        }
+    }
+}
 ?>
 
 <style>
@@ -91,31 +126,8 @@ $processedWithdrawals = max(1, (int) ceil(count($orders) / 3));
                     <option>Tahun Ini</option>
                 </select>
             </div>
-            <div class="relative h-72 w-full">
-                <svg class="h-full w-full" preserveAspectRatio="none" viewBox="0 0 800 240" aria-label="Grafik analisis pendapatan">
-                    <defs>
-                        <linearGradient id="financeLineGradient" x1="0%" x2="0%" y1="0%" y2="100%">
-                            <stop offset="0%" stop-color="#00685f" stop-opacity="0.22"></stop>
-                            <stop offset="100%" stop-color="#00685f" stop-opacity="0"></stop>
-                        </linearGradient>
-                    </defs>
-                    <path d="M 0 200 L 0 240 L 800 240 L 800 100 Z" fill="url(#financeLineGradient)"></path>
-                    <path class="finance-chart-line" d="M 0 200 Q 133 140 266 80 T 533 120 T 800 100" fill="none" stroke="#00685f" stroke-linecap="round" stroke-width="4"></path>
-                    <g class="text-[#bcc9c6] opacity-60">
-                        <line stroke="currentColor" stroke-dasharray="4" x1="0" x2="800" y1="60" y2="60"></line>
-                        <line stroke="currentColor" stroke-dasharray="4" x1="0" x2="800" y1="120" y2="120"></line>
-                        <line stroke="currentColor" stroke-dasharray="4" x1="0" x2="800" y1="180" y2="180"></line>
-                    </g>
-                </svg>
-                <div class="absolute left-0 top-0 flex h-full flex-col justify-between py-2 text-[10px] font-bold text-[#6d7a77]">
-                    <span>Rp 12M</span>
-                    <span>Rp 8M</span>
-                    <span>Rp 4M</span>
-                    <span>0</span>
-                </div>
-                <div class="mt-2 flex justify-between px-2 text-[10px] font-bold text-[#6d7a77]">
-                    <span>Sen</span><span>Sel</span><span>Rab</span><span>Kam</span><span>Jum</span><span>Sab</span><span>Min</span>
-                </div>
+            <div class="relative h-72 w-full rounded-lg border border-[#d3e4fe] bg-[#f8f9ff] p-4">
+                <canvas id="sellerRevenueChart"></canvas>
             </div>
         </section>
 
@@ -200,3 +212,62 @@ $processedWithdrawals = max(1, (int) ceil(count($orders) / 3));
         </div>
     </section>
 </section>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const canvas = document.getElementById('sellerRevenueChart');
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+    const days = <?= json_encode(array_keys($dailyRevenue)) ?>;
+    const revenues = <?= json_encode(array_values($dailyRevenue)) ?>;
+
+    const gradient = ctx.createLinearGradient(0, 0, 0, 240);
+    gradient.addColorStop(0, 'rgba(0, 104, 95, 0.35)');
+    gradient.addColorStop(1, 'rgba(0, 104, 95, 0.0)');
+
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: days,
+            datasets: [{
+                label: 'Pendapatan (Rp)',
+                data: revenues,
+                borderColor: '#00685f',
+                borderWidth: 3,
+                backgroundColor: gradient,
+                fill: true,
+                tension: 0.4,
+                pointRadius: 5,
+                pointHoverRadius: 7,
+                pointBackgroundColor: '#00685f'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: function (context) {
+                            return ' Pendapatan: Rp ' + new Intl.NumberFormat('id-ID').format(context.raw);
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function (value) {
+                            return 'Rp ' + new Intl.NumberFormat('id-ID').format(value);
+                        }
+                    }
+                }
+            }
+        }
+    });
+});
+</script>

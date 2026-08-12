@@ -35,6 +35,7 @@ $itemCount = array_sum(array_map(fn ($item) => (int) $item['qty'], $summary['ite
         </section>
     <?php else: ?>
         <form method="post" class="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_400px] lg:items-start">
+            <?= csrf_field() ?>
             <div class="space-y-5">
                 <section class="checkout-panel rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
                     <div class="mb-4 flex items-center justify-between gap-4">

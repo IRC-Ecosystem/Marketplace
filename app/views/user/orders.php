@@ -73,11 +73,16 @@ function order_badge(string $status): array
     </section>
 
     <?php if (!$orders): ?>
-        <section class="rounded-xl border border-dashed border-slate-300 bg-white p-10 text-center shadow-sm">
-            <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-50 text-2xl font-extrabold text-emerald-700">0</div>
-            <h2 class="mt-4 text-xl font-extrabold text-slate-950">Belum ada order</h2>
-            <p class="mt-2 text-sm text-slate-500">Checkout produk dari katalog untuk mulai membuat riwayat pesanan.</p>
-            <a href="<?= BASEURL ?>user/catalog" class="mt-5 inline-flex rounded-xl bg-emerald-700 px-5 py-3 text-sm font-bold text-white hover:bg-emerald-800">Belanja Sekarang</a>
+        <section class="rounded-2xl border border-dashed border-slate-300 bg-white p-12 text-center shadow-sm">
+            <div class="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-emerald-50 text-emerald-700">
+                <svg class="h-10 w-10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 2h12l2 4v16H4V6z"/><path d="M6 6h12"/><path d="M8 11h8"/><path d="M8 15h8"/></svg>
+            </div>
+            <h2 class="mt-5 text-2xl font-extrabold text-slate-950">Belum Ada Pesanan</h2>
+            <p class="mt-2 text-sm leading-6 text-slate-500 max-w-md mx-auto">Anda belum memiliki riwayat belanja. Jelajahi katalog produk UMKM lokal PasarKita dan dapatkan promo menarik!</p>
+            <a href="<?= BASEURL ?>user/catalog" class="mt-6 inline-flex items-center gap-2 rounded-xl bg-emerald-700 px-6 py-3 text-sm font-extrabold text-white shadow-lg shadow-emerald-900/10 transition hover:bg-emerald-800 active:scale-95">
+                <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h8.78a2 2 0 0 0 1.95-1.57L21 8H5.12"/></svg>
+                Belanja Sekarang
+            </a>
         </section>
     <?php else: ?>
         <section class="grid gap-5">
@@ -124,18 +129,22 @@ function order_badge(string $status): array
                         <p class="text-sm text-slate-500">
                             <?= $order['order_status'] === 'completed' ? 'Pesanan telah selesai.' : 'Status terakhir: ' . htmlspecialchars($label) ?>
                         </p>
-                        <div class="flex flex-wrap gap-3">
+                        <div class="flex flex-wrap items-center gap-3">
                             <a href="<?= BASEURL ?>user/chat" class="rounded-lg border border-emerald-700 px-5 py-2 text-sm font-bold text-emerald-700 hover:bg-emerald-50">Hubungi Penjual</a>
-                            <?php if ($order['payment_status'] === 'pending'): ?>
-                                <form action="<?= BASEURL ?>user/paySmartBank/<?= (int) $order['id'] ?>" method="post" class="flex gap-2">
-                                    <input name="pin" type="password" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" placeholder="PIN SmartBank" class="w-36 rounded-lg border border-slate-300 px-3 py-2 text-sm" required>
-                                    <button class="rounded-lg bg-emerald-700 px-5 py-2 text-sm font-bold text-white hover:bg-emerald-800">Bayar SmartBank</button>
+                            <?php if ($order['payment_status'] === 'pending' && $order['order_status'] !== 'cancelled'): ?>
+                                <form action="<?= BASEURL ?>user/paySmartBank/<?= (int) $order['id'] ?>" method="post" class="flex flex-wrap items-center gap-2">
+                                    <?= csrf_field() ?>
+                                    <div class="relative">
+                                        <input name="pin" type="password" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" placeholder="PIN 6-digit" class="w-36 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-mono tracking-widest text-slate-900 focus:border-emerald-700 focus:ring-emerald-100" required>
+                                    </div>
+                                    <button class="rounded-lg bg-emerald-700 px-5 py-2 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-800 active:scale-95">Bayar SmartBank</button>
                                 </form>
+                            <?php endif; ?>
+                            <?php if ($order['order_status'] !== 'completed' && $order['order_status'] !== 'cancelled'): ?>
+                                <a href="<?= BASEURL ?>user/cancelOrder/<?= (int) $order['id'] ?>" onclick="return confirm('Apakah Anda yakin ingin membatalkan pesanan ini?')" class="rounded-lg border border-red-300 bg-red-50 px-4 py-2 text-sm font-bold text-red-700 hover:bg-red-100">Batalkan Order</a>
                             <?php endif; ?>
                             <?php if ($order['order_status'] === 'completed'): ?>
                                 <a href="<?= BASEURL ?>user/catalog" class="rounded-lg bg-emerald-700 px-6 py-2 text-sm font-bold text-white hover:bg-emerald-800">Beli Lagi</a>
-                            <?php else: ?>
-                                <button class="rounded-lg bg-emerald-700 px-6 py-2 text-sm font-bold text-white hover:bg-emerald-800">Cek Detail</button>
                             <?php endif; ?>
                         </div>
                     </div>

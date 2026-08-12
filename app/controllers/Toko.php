@@ -18,6 +18,20 @@ class Toko extends Controllers
         $productModel = $this->model('Product_model');
         $orderModel = $this->model('Order_model');
 
+        $promotions = [];
+        try {
+            $promotions = $this->model('Voucher_model')->all();
+        } catch (Throwable $e) {
+            log_app_error($e);
+        }
+
+        $chats = [];
+        try {
+            $chats = $this->model('Chat_model')->forUser(current_user()['id']);
+        } catch (Throwable $e) {
+            log_app_error($e);
+        }
+
         return [
             'title' => $title,
             'store' => $store,
@@ -28,14 +42,8 @@ class Toko extends Controllers
             'bestSellers' => $orderModel->bestSellersByStore($store['id']),
             'lowStock' => $productModel->lowStockByStore($store['id']),
             'categories' => $productModel->categoriesByStore($store['id']),
-            'promotions' => [
-                ['name' => 'Voucher toko UMKM10', 'type' => 'Voucher', 'status' => 'draft', 'value' => '10%'],
-                ['name' => 'Produk unggulan mingguan', 'type' => 'Highlight', 'status' => 'aktif', 'value' => 'Etalase utama'],
-            ],
-            'messages' => [
-                ['buyer' => 'Budi Pembeli', 'message' => 'Apakah produk bisa dikirim hari ini?', 'time' => '09:15', 'unread' => true],
-                ['buyer' => 'Rina', 'message' => 'Stok kopi masih ada?', 'time' => 'Kemarin', 'unread' => false],
-            ],
+            'promotions' => $promotions,
+            'messages' => $chats,
         ];
     }
 
@@ -84,7 +92,29 @@ class Toko extends Controllers
 
     public function chat()
     {
-        $this->renderSeller('toko/chat', 'Chat Pembeli');
+        require_role('seller');
+        $user = current_user();
+        $store = $this->store();
+        if (!$store) {
+            $this->redirect('toko');
+        }
+
+        $chatModel = $this->model('Chat_model');
+        $contacts = $chatModel->contactsForUser($user['id']);
+        $activeReceiverId = isset($_GET['with']) ? (int) $_GET['with'] : ($contacts[0]['id'] ?? 3);
+        $chats = $chatModel->conversation($user['id'], $activeReceiverId);
+
+        $data = [
+            'title' => 'Chat Pembeli',
+            'store' => $store,
+            'contacts' => $contacts,
+            'activeReceiverId' => $activeReceiverId,
+            'chats' => $chats,
+        ];
+
+        $this->view('templates/header', $data);
+        $this->view('toko/chat', $data);
+        $this->view('templates/footer');
     }
 
     public function finance()
@@ -165,6 +195,7 @@ class Toko extends Controllers
     {
         require_role('user');
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            verify_csrf();
             if (trim($_POST['name'] ?? '') === '') {
                 flash('error', 'Nama toko wajib diisi.');
             } elseif ($this->model('Store_model')->create(current_user()['id'], $_POST)) {
@@ -186,6 +217,7 @@ class Toko extends Controllers
         }
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            verify_csrf();
             $required = ['name', 'category', 'price', 'stock'];
             foreach ($required as $field) {
                 if (!isset($_POST[$field]) || trim((string) $_POST[$field]) === '') {
@@ -205,6 +237,7 @@ class Toko extends Controllers
         require_role('seller');
         $store = $this->store();
         if ($store && $_SERVER['REQUEST_METHOD'] === 'POST') {
+            verify_csrf();
             $this->model('Product_model')->update((int) $id, $store['id'], $_POST);
             flash('success', 'Produk diperbarui.');
         }
@@ -227,9 +260,27 @@ class Toko extends Controllers
         require_role('seller');
         $store = $this->store();
         if ($store && $_SERVER['REQUEST_METHOD'] === 'POST') {
+            verify_csrf();
             $this->model('Order_model')->updateStatus((int) $_POST['order_id'], $_POST['status'], $store['id']);
-            flash('success', 'Status pesanan diperbarui.');
+            flash('success', 'Status pesanan toko Anda berhasil diperbarui.');
         }
         $this->redirect('toko/orders');
+    }
+
+    public function sendChat()
+    {
+        require_role('seller');
+        $store = $this->store();
+        $receiverId = 3;
+        if ($store && $_SERVER['REQUEST_METHOD'] === 'POST') {
+            verify_csrf();
+            $receiverId = (int) ($_POST['receiver_id'] ?? 3); // Default to buyer
+            $message = trim($_POST['message'] ?? '');
+            if ($message !== '' && $receiverId > 0) {
+                $this->model('Chat_model')->send(current_user()['id'], $receiverId, $message, $store['id']);
+                flash('success', 'Pesan balasan terkirim.');
+            }
+        }
+        $this->redirect('toko/chat?with=' . $receiverId);
     }
 }

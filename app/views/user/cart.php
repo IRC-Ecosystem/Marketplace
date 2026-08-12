@@ -29,11 +29,16 @@ $itemCount = array_sum(array_map(fn ($item) => (int) $item['qty'], $summary['ite
     <section class="grid grid-cols-1 gap-6 lg:grid-cols-3 lg:items-start">
         <div class="space-y-4 lg:col-span-2">
             <?php if (!$summary['items']): ?>
-                <div class="rounded-xl border border-dashed border-slate-300 bg-white p-10 text-center shadow-sm">
-                    <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-50 text-2xl font-extrabold text-emerald-700">0</div>
-                    <h2 class="mt-4 text-xl font-extrabold text-slate-950">Keranjang masih kosong</h2>
-                    <p class="mt-2 text-sm text-slate-500">Pilih produk dari katalog untuk mulai checkout.</p>
-                    <a href="<?= BASEURL ?>user/catalog" class="mt-5 inline-flex rounded-xl bg-emerald-700 px-5 py-3 text-sm font-bold text-white hover:bg-emerald-800">Lihat Katalog</a>
+                <div class="rounded-2xl border border-dashed border-slate-300 bg-white p-12 text-center shadow-sm">
+                    <div class="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-emerald-50 text-emerald-700">
+                        <svg class="h-10 w-10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h8.78a2 2 0 0 0 1.95-1.57L21 8H5.12"/></svg>
+                    </div>
+                    <h2 class="mt-5 text-2xl font-extrabold text-slate-950">Keranjang Masih Kosong</h2>
+                    <p class="mt-2 text-sm leading-6 text-slate-500 max-w-md mx-auto">Pilih produk berkualitas dari para pelaku UMKM Indonesia di katalog PasarKita dan masukkan ke keranjang belanja Anda.</p>
+                    <a href="<?= BASEURL ?>user/catalog" class="mt-6 inline-flex items-center gap-2 rounded-xl bg-emerald-700 px-6 py-3 text-sm font-extrabold text-white shadow-lg shadow-emerald-900/10 transition hover:bg-emerald-800 active:scale-95">
+                        <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m21 8-9-5-9 5 9 5 9-5Z"/><path d="M3 8v8l9 5 9-5V8"/></svg>
+                        Jelajahi Katalog
+                    </a>
                 </div>
             <?php endif; ?>
 
@@ -133,15 +138,20 @@ $itemCount = array_sum(array_map(fn ($item) => (int) $item['qty'], $summary['ite
                     </div>
                 </div>
 
-                <div class="mt-5 flex gap-3 rounded-xl border border-emerald-100 bg-emerald-50 p-4">
-                    <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white text-emerald-700">
-                        %
+                <form method="post" action="<?= BASEURL ?>user/applyVoucher" class="mt-5 rounded-xl border border-emerald-100 bg-emerald-50 p-4">
+                    <?= csrf_field() ?>
+                    <p class="text-sm font-extrabold text-slate-950">Gunakan Voucher Belanja</p>
+                    <div class="mt-2 flex gap-2">
+                        <input name="voucher_code" value="<?= e($summary['voucherCode'] ?? '') ?>" placeholder="Kode Voucher (misal: UMKM10)" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-bold uppercase">
+                        <button type="submit" class="rounded-lg bg-emerald-700 px-4 py-2 text-xs font-bold text-white hover:bg-emerald-800">Pakai</button>
                     </div>
-                    <div>
-                        <p class="text-sm font-extrabold text-slate-950">Voucher UMKM tersedia</p>
-                        <p class="mt-1 text-xs text-slate-600">Gunakan voucher di tahap checkout berikutnya.</p>
-                    </div>
-                </div>
+                    <?php if (!empty($summary['discount']) && $summary['discount'] > 0): ?>
+                        <p class="mt-2 text-xs font-bold text-emerald-700">Diskon diterapkan: -Rp<?= number_format($summary['discount'], 0, ',', '.') ?></p>
+                    <?php endif; ?>
+                    <?php if (!empty($summary['voucherError'])): ?>
+                        <p class="mt-2 text-xs font-bold text-red-600"><?= e($summary['voucherError']) ?></p>
+                    <?php endif; ?>
+                </form>
 
                 <?php if ($summary['items']): ?>
                     <a href="<?= BASEURL ?>user/checkout" class="mt-5 block rounded-xl bg-emerald-700 px-5 py-4 text-center text-lg font-extrabold text-white shadow-md hover:bg-emerald-800 active:scale-[0.98]">

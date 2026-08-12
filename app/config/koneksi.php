@@ -57,3 +57,14 @@ define('LOGISTIKA_API_KEY', env_value('LOGISTIKA_API_KEY', ''));
 define('INTEGRATION_WEBHOOK_SECRET', env_value('INTEGRATION_WEBHOOK_SECRET', ''));
 define('UMKM_INSIGHT_EVENTS_URL', rtrim(env_value('UMKM_INSIGHT_EVENTS_URL', ''), '/'));
 define('UMKM_INSIGHT_EVENTS_API_KEY', env_value('UMKM_INSIGHT_EVENTS_API_KEY', ''));
+
+function log_app_error(Throwable $e): void
+{
+    $logFile = dirname(__DIR__) . '/logs/error.log';
+    $dir = dirname($logFile);
+    if (!is_dir($dir)) {
+        @mkdir($dir, 0755, true);
+    }
+    $message = date('[Y-m-d H:i:s] ') . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine() . "\n" . $e->getTraceAsString() . "\n\n";
+    @file_put_contents($logFile, $message, FILE_APPEND);
+}

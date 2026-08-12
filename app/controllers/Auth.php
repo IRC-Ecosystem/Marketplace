@@ -5,9 +5,22 @@ class Auth extends Controllers
     public function login()
     {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            verify_csrf();
+            $ip = $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
+            if (!check_rate_limit('login_' . $ip, 5, 300)) {
+                flash('error', 'Terlalu banyak percobaan login. Silakan tunggu 5 menit.');
+                $this->redirect('auth/login');
+            }
+
             $user = $this->model('User_model')->findByEmail($_POST['email'] ?? '');
 
             if ($user && password_verify($_POST['password'] ?? '', $user['password'])) {
+                if (($user['status'] ?? 'active') === 'suspended') {
+                    flash('error', 'Akun Anda ditangguhkan oleh Admin.');
+                    $this->redirect('auth/login');
+                }
+
+                session_regenerate_id(true);
                 $_SESSION['user'] = [
                     'id' => (int) $user['id'],
                     'name' => $user['name'],
@@ -17,6 +30,7 @@ class Auth extends Controllers
                 $this->redirect(role_home($user));
             }
 
+            hit_rate_limit('login_' . $ip);
             flash('error', 'Email atau password tidak sesuai.');
         }
 
@@ -29,6 +43,7 @@ class Auth extends Controllers
     public function register()
     {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            verify_csrf();
             if (strlen($_POST['password'] ?? '') < 6) {
                 flash('error', 'Password minimal 6 karakter.');
             } elseif ($this->model('User_model')->findByEmail($_POST['email'] ?? '')) {

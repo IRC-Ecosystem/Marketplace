@@ -23,6 +23,17 @@ $statusBadge = function (string $status): string {
     };
 };
 $firstProductImage = $products[0]['image_url'] ?? '';
+
+$allMonths = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+$sellerMonthlyData = array_fill_keys($allMonths, 0.0);
+foreach ($orders as $order) {
+    if (($order['payment_status'] ?? '') === 'paid' || ($order['order_status'] ?? '') === 'completed') {
+        $m = date('M', strtotime($order['created_at'] ?? 'now'));
+        if (isset($sellerMonthlyData[$m])) {
+            $sellerMonthlyData[$m] += (float) ($order['subtotal'] ?? $order['total'] ?? 0);
+        }
+    }
+}
 ?>
 
 <style>
@@ -130,39 +141,8 @@ $firstProductImage = $products[0]['image_url'] ?? '';
                     <option>Tahun Ini</option>
                 </select>
             </div>
-            <div class="relative h-80 w-full rounded-lg border border-[#d3e4fe] bg-[#f8f9ff] px-6 pb-12 pt-6">
-                <div class="absolute bottom-12 left-14 right-6 top-6 border-b border-l border-[#bcc9c6]/50">
-                    <div class="absolute -left-11 inset-y-0 flex flex-col justify-between py-1 text-[10px] font-bold text-[#6d7a77]">
-                        <span>20jt</span>
-                        <span>15jt</span>
-                        <span>10jt</span>
-                        <span>5jt</span>
-                        <span>0</span>
-                    </div>
-                    <svg class="h-full w-full overflow-visible" viewBox="0 0 1000 300" preserveAspectRatio="none" aria-label="Grafik statistik penjualan seller">
-                        <defs>
-                            <linearGradient id="sellerSalesGradient" x1="0%" x2="0%" y1="0%" y2="100%">
-                                <stop offset="0%" style="stop-color:rgba(0, 104, 95, 0.22);stop-opacity:1"></stop>
-                                <stop offset="100%" style="stop-color:rgba(0, 104, 95, 0);stop-opacity:1"></stop>
-                            </linearGradient>
-                        </defs>
-                        <path d="M0,250 Q100,220 200,260 T400,180 T600,120 T800,150 T1000,50" fill="none" stroke="#00685f" stroke-linecap="round" stroke-width="4"></path>
-                        <path d="M0,250 Q100,220 200,260 T400,180 T600,120 T800,150 T1000,50 L1000,300 L0,300 Z" fill="url(#sellerSalesGradient)"></path>
-                        <circle cx="200" cy="260" fill="#00685f" r="6"></circle>
-                        <circle cx="400" cy="180" fill="#00685f" r="6"></circle>
-                        <circle cx="600" cy="120" fill="#00685f" r="6"></circle>
-                        <circle cx="800" cy="150" fill="#00685f" r="6"></circle>
-                        <circle class="animate-pulse" cx="1000" cy="50" fill="#00685f" r="8"></circle>
-                    </svg>
-                </div>
-                <div class="absolute bottom-4 left-14 right-6 flex justify-between text-xs font-extrabold text-[#3d4947]">
-                    <span>Jan</span>
-                    <span>Feb</span>
-                    <span>Mar</span>
-                    <span>Apr</span>
-                    <span>Mei</span>
-                    <span>Jun</span>
-                </div>
+            <div class="relative h-80 w-full rounded-lg border border-[#d3e4fe] bg-[#f8f9ff] p-4">
+                <canvas id="sellerSalesChart"></canvas>
             </div>
         </section>
 
@@ -305,6 +285,7 @@ $firstProductImage = $products[0]['image_url'] ?? '';
     </div>
 </section>
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     document.querySelectorAll('input[type="checkbox"]').forEach((checkbox) => {
         checkbox.addEventListener('change', () => {
@@ -313,6 +294,62 @@ $firstProductImage = $products[0]['image_url'] ?? '';
             label.classList.toggle('line-through', checkbox.checked);
             label.classList.toggle('text-white/50', checkbox.checked);
             label.classList.toggle('text-white', !checkbox.checked);
+        });
+    });
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const canvas = document.getElementById('sellerSalesChart');
+        if (!canvas) return;
+
+        const ctx = canvas.getContext('2d');
+        const months = <?= json_encode(array_keys($sellerMonthlyData)) ?>;
+        const sales = <?= json_encode(array_values($sellerMonthlyData)) ?>;
+
+        const gradient = ctx.createLinearGradient(0, 0, 0, 260);
+        gradient.addColorStop(0, 'rgba(0, 104, 95, 0.35)');
+        gradient.addColorStop(1, 'rgba(0, 104, 95, 0.0)');
+
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: months,
+                datasets: [{
+                    label: 'Penjualan (Rp)',
+                    data: sales,
+                    borderColor: '#00685f',
+                    borderWidth: 3,
+                    backgroundColor: gradient,
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 5,
+                    pointHoverRadius: 7,
+                    pointBackgroundColor: '#00685f'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: function (context) {
+                                return ' Penjualan: Rp ' + new Intl.NumberFormat('id-ID').format(context.raw);
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function (value) {
+                                return 'Rp ' + new Intl.NumberFormat('id-ID').format(value);
+                            }
+                        }
+                    }
+                }
+            }
         });
     });
 </script>

@@ -110,11 +110,11 @@ $address = trim((string) ($user['address'] ?? ''));
     </div>
     <?php if (empty($smartBank['linked'])): ?>
         <?php if (empty($buyerLink['request_id'])): ?>
-            <form action="<?= BASEURL ?>user/smartbankOtpRequest" method="post" class="mt-5"><button class="rounded-lg bg-[#00685f] px-5 py-3 text-sm font-extrabold text-white hover:bg-[#005049]">Kirim OTP SmartBank</button></form>
+            <form action="<?= BASEURL ?>user/smartbankOtpRequest" method="post" class="mt-5"><?= csrf_field() ?><button class="rounded-lg bg-[#00685f] px-5 py-3 text-sm font-extrabold text-white hover:bg-[#005049]">Kirim OTP SmartBank</button></form>
         <?php elseif (empty($buyerLink['verification_token'])): ?>
-            <form action="<?= BASEURL ?>user/smartbankOtpVerify" method="post" class="mt-5 flex max-w-md gap-3"><input name="code" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" placeholder="OTP 6 digit" class="min-w-0 flex-1 rounded-lg border border-[#bcc9c6] px-4 py-3 font-mono" required><button class="rounded-lg bg-[#00685f] px-5 py-3 text-sm font-extrabold text-white">Verifikasi</button></form>
+            <form action="<?= BASEURL ?>user/smartbankOtpVerify" method="post" class="mt-5 flex max-w-md gap-3"><?= csrf_field() ?><input name="code" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" placeholder="OTP 6 digit" class="min-w-0 flex-1 rounded-lg border border-[#bcc9c6] px-4 py-3 font-mono" required><button class="rounded-lg bg-[#00685f] px-5 py-3 text-sm font-extrabold text-white">Verifikasi</button></form>
         <?php else: ?>
-            <form action="<?= BASEURL ?>user/smartbankLink" method="post" class="mt-5"><button class="rounded-lg bg-[#00685f] px-5 py-3 text-sm font-extrabold text-white">Konfirmasi Hubungkan Wallet</button></form>
+            <form action="<?= BASEURL ?>user/smartbankLink" method="post" class="mt-5"><?= csrf_field() ?><button class="rounded-lg bg-[#00685f] px-5 py-3 text-sm font-extrabold text-white">Konfirmasi Hubungkan Wallet</button></form>
         <?php endif; ?>
     <?php endif; ?>
 </section>
