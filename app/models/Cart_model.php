@@ -91,7 +91,7 @@ class Cart_model
 
         return compact('items', 'subtotal', 'voucherCode', 'discount', 'voucherError', 'marketplaceFee', 'gatewayFee', 'bankFee', 'tax', 'shipping', 'storeSummaries', 'total');
     }
-
+    
     private function summaryForItems(array $items): array
     {
         $subtotal = array_sum(array_column($items, 'subtotal'));
