@@ -163,10 +163,10 @@ class User extends Controllers
             if ($address === '') {
                 flash('error', 'Alamat pengiriman wajib diisi.');
             } else {
-                $orderId = $this->model('Order_model')->checkout(current_user()['id'], $address, $summary);
-                if ($orderId) {
+                $orderIds = $this->model('Order_model')->checkoutStores(current_user()['id'], $address, $summary);
+                if ($orderIds) {
                     $cart->clear();
-                    flash('success', 'Order dibuat. Otorisasi pembayaran SmartBank dari halaman Order Saya.');
+                    flash('success', count($orderIds) . ' order dibuat. Otorisasi pembayaran SmartBank dari halaman Order Saya.');
                     $this->redirect('user/orders');
                 }
                 flash('error', 'Checkout gagal. Cek saldo, stok, atau isi keranjang.');
@@ -287,6 +287,7 @@ class User extends Controllers
                 $result = $this->model('SmartBank_model')->pay($order, current_user()['id'], $pin);
                 $this->model('SmartBank_model')->recordPayment((int) $orderId, $result);
                 $orders->markSmartBankPaid((int) $orderId, current_user()['id'], $result);
+                $this->model('Logistics_model')->dispatchPending();
                 flash('success', 'Pembayaran SmartBank berhasil.');
             } catch (Throwable $error) {
                 hit_rate_limit('pin_pay_' . current_user()['id']);

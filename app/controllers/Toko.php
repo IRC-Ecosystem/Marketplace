@@ -132,6 +132,65 @@ class Toko extends Controllers
         $this->renderSeller('toko/performance', 'Performa Toko');
     }
 
+    public function smartbank()
+    {
+        require_role('seller');
+        $store = $this->store();
+        $state = ['linked' => false, 'request_id' => $_SESSION['smartbank_store_link']['request_id'] ?? null, 'verified' => !empty($_SESSION['smartbank_store_link']['verification_token'])];
+        try {
+            $state['linked'] = (bool) $this->model('SmartBank_model')->linkage($store['smartbank_external_id'] ?: 'marketplace-store-' . $store['id']);
+        } catch (Throwable $error) {
+            $state['error'] = $error->getMessage();
+        }
+        $data = ['title' => 'Wallet SmartBank Toko', 'store' => $store, 'smartBank' => $state];
+        $this->view('templates/header', $data);
+        $this->view('toko/smartbank', $data);
+        $this->view('templates/footer');
+    }
+
+    public function smartbankOtpRequest()
+    {
+        require_role('seller');
+        try {
+            $phone = trim($_POST['phone'] ?? '');
+            if ($phone === '') throw new RuntimeException('Nomor SmartBank wajib diisi.');
+            $result = $this->model('SmartBank_model')->requestOtp($phone, 'store-' . current_user()['id']);
+            $_SESSION['smartbank_store_link'] = ['request_id' => $result['request_id']];
+            flash('success', 'OTP dikirim ke Inbox SmartBank.');
+        } catch (Throwable $error) { flash('error', $error->getMessage()); }
+        $this->redirect('toko/smartbank');
+    }
+
+    public function smartbankOtpVerify()
+    {
+        require_role('seller');
+        try {
+            $requestId = $_SESSION['smartbank_store_link']['request_id'] ?? '';
+            $code = trim($_POST['code'] ?? '');
+            if ($requestId === '' || !preg_match('/^\\d{6}$/', $code)) throw new RuntimeException('OTP tidak valid.');
+            $result = $this->model('SmartBank_model')->verifyOtp($requestId, $code, 'store-' . current_user()['id']);
+            $_SESSION['smartbank_store_link']['verification_token'] = $result['verification_token'];
+            flash('success', 'OTP valid. Konfirmasi wallet toko.');
+        } catch (Throwable $error) { flash('error', $error->getMessage()); }
+        $this->redirect('toko/smartbank');
+    }
+
+    public function smartbankLink()
+    {
+        require_role('seller');
+        try {
+            $store = $this->store();
+            $token = $_SESSION['smartbank_store_link']['verification_token'] ?? '';
+            if ($token === '') throw new RuntimeException('Verifikasi OTP terlebih dahulu.');
+            $externalId = $store['smartbank_external_id'] ?: 'marketplace-store-' . $store['id'];
+            $this->model('SmartBank_model')->link($externalId, $token);
+            $this->model('Store_model')->setSmartBankExternalId((int) $store['id'], $externalId);
+            unset($_SESSION['smartbank_store_link']);
+            flash('success', 'Wallet toko berhasil ditautkan.');
+        } catch (Throwable $error) { flash('error', $error->getMessage()); }
+        $this->redirect('toko/smartbank');
+    }
+
     public function create()
     {
         require_role('user');

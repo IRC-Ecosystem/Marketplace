@@ -44,7 +44,7 @@ class Product_model
 
     public function find(int $id): ?array
     {
-        $stmt = $this->db->prepare('SELECT p.*, s.name store_name, s.owner_id FROM products p JOIN stores s ON s.id = p.store_id WHERE p.id = ?');
+        $stmt = $this->db->prepare('SELECT p.*, s.name store_name, s.owner_id, s.smartbank_external_id FROM products p JOIN stores s ON s.id = p.store_id WHERE p.id = ?');
         $stmt->execute([$id]);
         return $stmt->fetch() ?: null;
     }

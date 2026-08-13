@@ -82,9 +82,32 @@ class Cart_model
         $tax = round($discountedSubtotal * 0.02);
         $shipping = $subtotal > 0 ? max(5000, round($subtotal * 0.05)) : 0;
 
+        $storeItems = [];
+        foreach ($items as $item) {
+            $storeItems[$item['product']['store_id']][] = $item;
+        }
+        $storeSummaries = array_map(fn (array $group) => $this->summaryForItems($group), $storeItems);
         $total = $discountedSubtotal + $marketplaceFee + $gatewayFee + $bankFee + $tax + $shipping;
 
-        return compact('items', 'subtotal', 'voucherCode', 'discount', 'voucherError', 'marketplaceFee', 'gatewayFee', 'bankFee', 'tax', 'shipping', 'total');
+        return compact('items', 'subtotal', 'voucherCode', 'discount', 'voucherError', 'marketplaceFee', 'gatewayFee', 'bankFee', 'tax', 'shipping', 'storeSummaries', 'total');
+    }
+    
+    private function summaryForItems(array $items): array
+    {
+        $subtotal = array_sum(array_column($items, 'subtotal'));
+        $marketplaceFee = round($subtotal * 0.02);
+        $gatewayFee = round($subtotal * 0.005);
+        $bankFee = round($subtotal * 0.01);
+        $tax = round($subtotal * 0.02);
+        $shipping = max(5000, round($subtotal * 0.05));
+        $product = $items[0]['product'];
+
+        return compact('items', 'subtotal', 'marketplaceFee', 'gatewayFee', 'bankFee', 'tax', 'shipping') + [
+            'total' => $subtotal + $marketplaceFee + $gatewayFee + $bankFee + $tax + $shipping,
+            'storeId' => (int) $product['store_id'],
+            'sellerExternalId' => (string) ($product['smartbank_external_id'] ?: 'marketplace-store-' . $product['store_id']),
+            'storeName' => (string) $product['store_name'],
+        ];
     }
 }
 

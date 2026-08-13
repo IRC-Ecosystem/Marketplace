@@ -86,7 +86,7 @@ class SmartBank_model
     {
         return $this->request('/v1/connect/payment-requests', 'POST', [
             'buyer_external_id' => $this->buyerExternalId($buyerId),
-            'seller_external_id' => SMARTBANK_MARKETPLACE_EXTERNAL_ID,
+            'seller_external_id' => $order['seller_external_id'] ?: SMARTBANK_MARKETPLACE_EXTERNAL_ID,
             'gross_amount' => (string) round((float) $order['total']),
             'pin' => $pin,
             'description' => 'Pembayaran PasarKita ' . $order['order_code'],

@@ -14,7 +14,6 @@ DROP TABLE IF EXISTS products;
 DROP TABLE IF EXISTS stores;
 DROP TABLE IF EXISTS wallets;
 DROP TABLE IF EXISTS users;
-
 SET FOREIGN_KEY_CHECKS = 1;
 
 CREATE TABLE users (
@@ -44,6 +43,7 @@ CREATE TABLE stores (
     description TEXT NULL,
     address TEXT NULL,
     status ENUM('active', 'inactive') NOT NULL DEFAULT 'active',
+    smartbank_external_id VARCHAR(191) NULL UNIQUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_store_owner FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE,
     INDEX idx_stores_owner (owner_id, status)
@@ -68,6 +68,8 @@ CREATE TABLE products (
 CREATE TABLE orders (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
+    store_id INT NULL,
+    seller_external_id VARCHAR(191) NULL,
     order_code VARCHAR(40) NOT NULL UNIQUE,
     shipping_address TEXT NOT NULL,
     subtotal DECIMAL(14,2) NOT NULL,
@@ -82,6 +84,7 @@ CREATE TABLE orders (
     order_status ENUM('processing', 'shipped', 'completed', 'cancelled') NOT NULL DEFAULT 'processing',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_order_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    CONSTRAINT fk_order_store FOREIGN KEY (store_id) REFERENCES stores(id),
     INDEX idx_orders_user (user_id, payment_status, order_status)
 );
 
@@ -126,7 +129,6 @@ CREATE TABLE ledgers (
     CONSTRAINT fk_ledger_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     CONSTRAINT fk_ledger_order FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE SET NULL
 );
-
 CREATE TABLE vouchers (
     id INT AUTO_INCREMENT PRIMARY KEY,
     code VARCHAR(50) NOT NULL UNIQUE,
@@ -185,4 +187,3 @@ INSERT INTO products (store_id, name, category, description, price, stock, image
 INSERT INTO vouchers (code, label, discount_type, discount_value, min_purchase) VALUES
 ('UMKM10', 'Diskon 10% Produk UMKM', 'percentage', 10, 20000),
 ('ONGKIR5K', 'Subsidi Logistik Rp5.000', 'fixed', 5000, 10000);
-
